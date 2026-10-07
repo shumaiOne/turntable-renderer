@@ -1,0 +1,28 @@
+turntable-renderer
+Copyright (c) 2026 turntable-renderer contributors.
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+
+Third-Party Components and Attribution:
+
+1. Blender
+   - Project: Blender (https://www.blender.org)
+   - Version: 4.5.x LTS
+   - License: GNU General Public License v2 or later (GPL-2.0+) / Blender Foundation
+   - Copyright (c) Blender Foundation and contributors.
+   - Note: Blender is invoked strictly as an external, isolated subprocess CLI tool.
+
+2. Bun
+   - Project: Bun (https://bun.sh)
+   - License: MIT License (along with LGPL-2.1 for JavaScriptCore / WebKit components)
+   - Copyright (c) Oven PBC and contributors.
+
+3. Hono
+   - Project: Hono (https://hono.dev)
+   - License: MIT License
+   - Copyright (c) 2021 - present, Yusuke Wada and Hono contributors.
+
+4. Zod
+   - Project: Zod (https://zod.dev)
+   - License: MIT License
+   - Copyright (c) 2020 Colin McDonnell.

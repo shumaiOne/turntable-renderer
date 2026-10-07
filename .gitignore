@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Local data & storage
+data/
+/data/
+*.bin
+
+# Reference media & private benchmarks
+reference/
+/reference/
+
+# Build and test outputs
+dist/
+coverage/
+*.tmp
+*.log
+.DS_Store
+
+# Blender backups
+*.blend1
+
+# Environment
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,28 @@
+{
+  "name": "turntable-renderer",
+  "version": "0.1.0",
+  "description": "Standalone 3D model turntable rendering HTTP server built with Bun, Hono, and isolated Blender subprocesses",
+  "main": "src/turntable-renderer/index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/turntable-renderer/index.ts",
+    "dev": "bun --watch src/turntable-renderer/index.ts",
+    "check": "biome check .",
+    "check:write": "biome check --write .",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "keywords": ["3d", "turntable", "render", "blender", "hono", "bun"],
+  "license": "GPL-3.0",
+  "dependencies": {
+    "hono": "4.13.13",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/bun": "1.4.2",
+    "typescript": "5.9.3"
+  }
+}
