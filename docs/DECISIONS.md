@@ -29,3 +29,9 @@
 - **Context**: Need persistent file storage for uploaded inputs and generated render outputs without introducing an external database.
 - **Decision**: Implement `LocalDiskStore` where binary blobs are saved to `${DATA_DIR}/f_${id}.bin` and metadata is saved to `${DATA_DIR}/f_${id}.json`.
 - **Consequences**: Completely self-contained, crash-resilient, and inspectable on disk.
+
+## ADR 006: 3DS (.3ds) Format Status in Blender 4.5 LTS
+- **Status**: Accepted
+- **Context**: Plan requested investigating whether the legacy Autodesk 3DS (.3ds) importer is present in the pinned Blender 4.5.14 LTS build.
+- **Decision**: The 3DS importer was removed from Blender core and is not shipped in standard 4.5 LTS builds. Requests with `.3ds` will be rejected with `unsupported_format` (or `422`).
+- **Consequences**: Avoids bundling untrusted external addons; aligns with modern industry standards favoring glTF, USD, and FBX.

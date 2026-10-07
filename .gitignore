@@ -19,8 +19,10 @@ scratch/
 *.log
 .DS_Store
 
-# Blender backups
+# Blender backups & Python cache
 *.blend1
+__pycache__/
+*.pyc
 
 # Environment
 .env

@@ -11,7 +11,7 @@ turntable-renderer v1 supports 3D formats natively importable by Blender 4.5 LTS
 | `.obj` | Wavefront OBJ | `bpy.ops.wm.obj_import` | Untextured render if `.mtl` is missing. |
 | `.stl` | Stereolithography | `bpy.ops.wm.stl_import` | Raw triangular mesh, no materials. |
 | `.dae` | Collada DAE | `bpy.ops.wm.collada_import` | Standard Collada scene graph. |
-| `.3ds` | 3D Studio | Addon importer | Subject to build availability. |
+| `.3ds` | 3D Studio | N/A | Removed in Blender 4.x. Returns `unsupported_format`. |
 
 ## Rejected Formats
 - `.blend`: Strictly forbidden for security (Python script execution vector).
