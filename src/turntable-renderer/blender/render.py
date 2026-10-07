@@ -59,30 +59,109 @@ def compute_bounds_and_center():
     return center, radius
 
 
-def setup_world(background_opt):
+DEFAULT_HDRI_PATH = os.path.normpath(
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "../assets/environments/studio_kontrast_04_1k.exr",
+    )
+)
+
+
+def resolve_env_map(env_map_name: str | None) -> str | None:
+    if not env_map_name or env_map_name.lower() in ("none", "null", "false", ""):
+        return None
+
+    if env_map_name in ("default", "studio_kontrast_04_1k", "studio_kontrast_04"):
+        if os.path.exists(DEFAULT_HDRI_PATH):
+            return DEFAULT_HDRI_PATH
+
+    if os.path.exists(env_map_name):
+        return os.path.abspath(env_map_name)
+
+    assets_dir = os.path.normpath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "../assets/environments")
+    )
+    candidates = [
+        os.path.join(assets_dir, env_map_name),
+        os.path.join(assets_dir, f"{env_map_name}.exr"),
+        os.path.join(os.getcwd(), env_map_name),
+        os.path.join(os.getcwd(), "reference", env_map_name),
+        os.path.join(os.getcwd(), "reference", f"{env_map_name}.exr"),
+        os.path.join(os.path.dirname(__file__), "../../../", env_map_name),
+        os.path.join(os.path.dirname(__file__), "../../../reference", env_map_name),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return os.path.abspath(c)
+
+    if os.path.exists(DEFAULT_HDRI_PATH):
+        return DEFAULT_HDRI_PATH
+
+    return None
+
+
+def setup_world(background_opt, hdri_path=None, hdri_intensity=1.0, hdri_rotation=0.0):
     scene = bpy.context.scene
-    scene.use_nodes = True
     world = scene.world or bpy.data.worlds.new("World")
     scene.world = world
     world.use_nodes = True
     nodes = world.node_tree.nodes
+    links = world.node_tree.links
     nodes.clear()
 
-    bg_node = nodes.new(type="ShaderNodeBackground")
     output_node = nodes.new(type="ShaderNodeOutputWorld")
 
     bg_color = (0.0, 0.0, 0.0, 1.0)
-    if isinstance(background_opt, dict) and background_opt.get("type") == "color":
-        c = hex_to_rgb(background_opt.get("color", "#000000"))
-        bg_color = (c[0], c[1], c[2], 1.0)
+    is_transparent = False
+    if isinstance(background_opt, dict):
+        if background_opt.get("type") == "transparent":
+            is_transparent = True
+        elif background_opt.get("type") == "color":
+            c = hex_to_rgb(background_opt.get("color", "#000000"))
+            bg_color = (c[0], c[1], c[2], 1.0)
 
-    bg_node.inputs["Color"].default_value = bg_color
-    bg_node.inputs["Strength"].default_value = 1.0
+    scene.render.film_transparent = is_transparent
 
-    world.node_tree.links.new(bg_node.outputs["Background"], output_node.inputs["Surface"])
+    if hdri_path and os.path.exists(hdri_path):
+        env_tex = nodes.new(type="ShaderNodeTexEnvironment")
+        env_tex.image = bpy.data.images.load(hdri_path)
+
+        tex_coord = nodes.new(type="ShaderNodeTexCoord")
+        mapping = nodes.new(type="ShaderNodeMapping")
+        if hdri_rotation != 0.0:
+            mapping.inputs["Rotation"].default_value[2] = math.radians(hdri_rotation)
+
+        links.new(tex_coord.outputs["Generated"], mapping.inputs["Vector"])
+        links.new(mapping.outputs["Vector"], env_tex.inputs["Vector"])
+
+        hdri_bg = nodes.new(type="ShaderNodeBackground")
+        hdri_bg.inputs["Strength"].default_value = hdri_intensity
+        links.new(env_tex.outputs["Color"], hdri_bg.inputs["Color"])
+
+        if is_transparent:
+            links.new(hdri_bg.outputs["Background"], output_node.inputs["Surface"])
+        else:
+            camera_bg = nodes.new(type="ShaderNodeBackground")
+            camera_bg.inputs["Color"].default_value = bg_color
+            camera_bg.inputs["Strength"].default_value = 1.0
+
+            light_path = nodes.new(type="ShaderNodeLightPath")
+            mix_shader = nodes.new(type="ShaderNodeMixShader")
+
+            links.new(light_path.outputs["Is Camera Ray"], mix_shader.inputs["Fac"])
+            links.new(hdri_bg.outputs["Background"], mix_shader.inputs[1])
+            links.new(camera_bg.outputs["Background"], mix_shader.inputs[2])
+            links.new(mix_shader.outputs["Shader"], output_node.inputs["Surface"])
+    else:
+        bg_node = nodes.new(type="ShaderNodeBackground")
+        bg_node.inputs["Color"].default_value = bg_color
+        bg_node.inputs["Strength"].default_value = 1.0
+        links.new(bg_node.outputs["Background"], output_node.inputs["Surface"])
 
 
 def setup_lighting(lighting_type: str, radius: float, distance: float, intensity: float):
+    if lighting_type == "none":
+        return
     # Studio-dark low-key lighting
     # Overhead softbox
     overhead_data = bpy.data.lights.new(name="OverheadSoftbox", type="AREA")
@@ -283,11 +362,21 @@ def main():
         fov_deg = options.get("fovDegrees", 35.0)
         elevation_deg = options.get("elevationDegrees", 10.0)
         lighting_type = options.get("lighting", "studio-dark")
-        lighting_intensity = options.get("lightingIntensity", 1.0)
+        lighting_intensity = options.get("lightingIntensity", 0.7)
         samples = options.get("samples", 16)
         video_format = options.get("format", "mp4")
 
-        setup_world(options.get("background", {"type": "color", "color": "#000000"}))
+        env_map_opt = options.get("envMap") or options.get("hdri") or "default"
+        env_map_path = resolve_env_map(env_map_opt)
+        env_intensity = options.get("envIntensity", 0.7)
+        env_rotation = options.get("envRotation", 0.0)
+
+        setup_world(
+            options.get("background", {"type": "color", "color": "#000000"}),
+            hdri_path=env_map_path,
+            hdri_intensity=env_intensity,
+            hdri_rotation=env_rotation,
+        )
         cam_obj, distance = setup_camera(radius, framing_margin, fov_deg, elevation_deg)
         setup_lighting(lighting_type, radius, distance, lighting_intensity)
         setup_animation(root_empty, frames, total_degrees, start_angle, direction, include_end_frame)

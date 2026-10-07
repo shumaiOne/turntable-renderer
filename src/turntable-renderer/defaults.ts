@@ -39,7 +39,10 @@ export const RENDER_DEFAULTS = {
 
   // Lighting & Background
   lighting: 'studio-dark' as const,
-  lightingIntensity: 1.0,
+  lightingIntensity: 0.7,
+  envMap: 'studio_kontrast_04_1k',
+  envIntensity: 0.7,
+  envRotation: 0,
   background: {
     type: 'color',
     color: '#000000',

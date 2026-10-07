@@ -47,3 +47,9 @@
 - **Context**: Local host environments and updated deployments use Blender 5.2.2 LTS. Blender 5.x introduces layered/slotted action animation systems, splits `media_type` into `VIDEO` and `IMAGE` for FFmpeg render configurations, and removes the deprecated legacy Collada (.dae) operator.
 - **Decision**: Pin Blender `5.2.2` LTS (Linux x64 SHA-256: `84098912789dc450e95697c4184fb8a90acbe5111c2ba4aede3fecb57806a168`) in Dockerfile and update python helper scripts to support Blender 5.x animation and video encoding while maintaining backwards compatibility.
 - **Consequences**: Enables local development and production Docker runs using Blender 5.2.2 LTS without deprecation errors or animation curve lookup failures.
+
+## ADR 009: Default Studio HDRI Environment (studio_kontrast_04_1k)
+- **Status**: Accepted
+- **Context**: Turntable renders require natural, high-quality studio lighting and reflections across metallic paint, glass, and alloy surfaces matching the Frame.io reference benchmark, without washing out black backgrounds or shadow depth.
+- **Decision**: Adopt and bundle `studio_kontrast_04_1k.exr` as the official built-in default environment map under `src/turntable-renderer/assets/environments/`, with `envIntensity = 0.7` and dual-path `LightPath` camera separation (pure `#000000` visible to camera, full 360° studio reflections to surfaces). Allow custom `envMap`, `envIntensity`, and `envRotation` overrides via render options.
+- **Consequences**: Produces photorealistic studio specular highlights and ambient gradients deterministically out of the box while preserving the clean black background.

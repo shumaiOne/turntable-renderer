@@ -61,5 +61,8 @@ describe('Render Defaults', () => {
     expect(RENDER_DEFAULTS.pixFmt).toBe('yuv420p');
     expect(RENDER_DEFAULTS.engine).toBe('cycles');
     expect(RENDER_DEFAULTS.samples).toBe(16);
+    expect(RENDER_DEFAULTS.envMap).toBe('studio_kontrast_04_1k');
+    expect(RENDER_DEFAULTS.envIntensity).toBe(0.7);
+    expect(RENDER_DEFAULTS.envRotation).toBe(0);
   });
 });
