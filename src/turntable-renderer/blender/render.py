@@ -195,7 +195,7 @@ def setup_animation(root_empty, frames: int, total_degrees: float, start_angle: 
                 kf.interpolation = "LINEAR"
 
 
-def configure_render_engine(engine_name: str, samples: int = 64):
+def configure_render_engine(engine_name: str, samples: int = 16):
     scene = bpy.context.scene
     engine_name = engine_name.lower()
 
@@ -207,6 +207,10 @@ def configure_render_engine(engine_name: str, samples: int = 64):
                 break
             except TypeError:
                 continue
+        try:
+            scene.eevee.taa_render_samples = samples
+        except AttributeError:
+            pass
     elif engine_name == "cycles":
         scene.render.engine = "CYCLES"
         scene.cycles.device = "CPU"
@@ -226,7 +230,7 @@ def configure_video_encoding(output_path: str, width: int, height: int, fps: int
     scene.render.ffmpeg.format = "MPEG4" if format_type == "mp4" else "WEBM"
     scene.render.ffmpeg.codec = "H264"
     scene.render.ffmpeg.constant_rate_factor = "MEDIUM"
-    scene.render.ffmpeg.ffmpeg_preset = "MEDIUM"
+    scene.render.ffmpeg.ffmpeg_preset = "GOOD"
 
     # Mirror Frame.io keyframe GOP parameters: single GOP across animation, no B-frames
     scene.render.ffmpeg.gopsize = scene.frame_end
@@ -283,13 +287,14 @@ def main():
         lighting_type = options.get("lighting", "studio-dark")
         lighting_intensity = options.get("lightingIntensity", 1.0)
         engine_name = options.get("engine", "eevee")
+        samples = options.get("samples", 16)
         video_format = options.get("format", "mp4")
 
         setup_world(options.get("background", {"type": "color", "color": "#000000"}))
         cam_obj, distance = setup_camera(radius, framing_margin, fov_deg, elevation_deg)
         setup_lighting(lighting_type, radius, distance, lighting_intensity)
         setup_animation(root_empty, frames, total_degrees, start_angle, direction, include_end_frame)
-        configure_render_engine(engine_name)
+        configure_render_engine(engine_name, samples)
 
         if "video" in outputs:
             video_output_path = os.path.join(output_dir, f"turntable.{video_format}")

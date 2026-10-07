@@ -1,23 +1,19 @@
-ARG DEBIAN_VERSION=bookworm-slim
-FROM debian:${DEBIAN_VERSION}
+FROM oven/bun:1.4.2
 
 ARG BLENDER_VERSION=4.5.14
 ARG BLENDER_SHA256=9ba871ff2ecd36526b77432745980b7e6664ecd0c7ca11c48849073dcfe06da3
-ARG BUN_VERSION=1.4.2
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    BUN_INSTALL=/opt/bun \
-    PATH="/opt/bun/bin:/opt/blender:${PATH}" \
+    PATH="/opt/blender:${PATH}" \
     DATA_DIR=/app/data \
     PORT=3000 \
     HOST=0.0.0.0
 
-# Install runtime dependencies for Blender and Bun
+# Install runtime dependencies for Blender
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     xz-utils \
-    unzip \
     procps \
     libxkbcommon0 \
     libxi6 \
@@ -30,12 +26,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-dri \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Bun
-RUN curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}" && \
-    mkdir -p /opt/bun && \
-    cp -r /root/.bun/* /opt/bun/ && \
-    chmod -R 755 /opt/bun
 
 # Download and install Blender 4.5.x LTS
 RUN curl -fsSL -o /tmp/blender.tar.xz \
@@ -52,8 +42,8 @@ RUN groupadd -g 1001 appgroup && \
 
 WORKDIR /app
 
-# Copy application configuration and dependencies
-COPY package.json bunfig.toml ./
+# Copy application configuration and lockfile
+COPY package.json bunfig.toml bun.lock ./
 RUN bun install --frozen-lockfile
 
 # Copy application source code

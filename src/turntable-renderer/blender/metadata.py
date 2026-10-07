@@ -66,9 +66,16 @@ def extract_metadata(input_format: str = "unknown") -> dict:
     elif unit_settings.system == "NONE":
         unit_str = "unknown"
 
+    # Default up-axis convention by format
+    fmt = input_format.lower().lstrip(".")
+    if fmt in ("glb", "gltf", "fbx", "obj", "usd", "usda", "usdc", "usdz", "dae"):
+        up_axis = "Y"
+    else:
+        up_axis = "Z"
+
     return {
-        "format": input_format.lower().lstrip("."),
-        "upAxis": "Z" if bpy.context.scene.up_axis == "Z" else "Y",
+        "format": fmt,
+        "upAxis": up_axis,
         "unit": unit_str,
         "dimensions": dimensions,
         "meshCount": mesh_count,
