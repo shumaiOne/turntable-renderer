@@ -26,7 +26,6 @@ const SettingsSchema = z.object({
 
   // Blender Subprocess
   BLENDER_PATH: z.string().default('blender'),
-  RENDER_ENGINE: z.enum(['eevee', 'cycles', 'workbench']).default('eevee'),
 
   // Auth (Optional Basic Auth)
   BASIC_AUTH_USERNAME: z.string().optional(),

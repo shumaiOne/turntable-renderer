@@ -61,7 +61,7 @@ describe('Blender Native Importers Integration Tests', () => {
           height: 512,
           frames: 1,
           fps: 6,
-          engine: 'workbench',
+          samples: 1,
         },
       };
 
@@ -86,7 +86,7 @@ describe('Blender Native Importers Integration Tests', () => {
 
       const posterPath = join(outDir, 'poster.png');
       expect(existsSync(posterPath)).toBe(true);
-    });
+    }, 30000);
   }
 
   it('rejects .gltf with external references', async () => {

@@ -59,5 +59,7 @@ describe('Render Defaults', () => {
       expect(RENDER_DEFAULTS.background.color).toBe('#000000');
     }
     expect(RENDER_DEFAULTS.pixFmt).toBe('yuv420p');
+    expect(RENDER_DEFAULTS.engine).toBe('cycles');
+    expect(RENDER_DEFAULTS.samples).toBe(16);
   });
 });

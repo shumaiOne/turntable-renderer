@@ -49,6 +49,10 @@ export const RENDER_DEFAULTS = {
   shading: 'material' as const,
   groundShadow: false,
 
+  // Engine (Cycles CPU hardcoded for v1)
+  engine: 'cycles' as const,
+  samples: 16,
+
   // Video Encoding Defaults (mirrored from Frame.io reference)
   format: 'mp4' as const,
   pixFmt: 'yuv420p' as const,

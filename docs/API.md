@@ -52,7 +52,7 @@ Base URL: `http://localhost:3000`
       "frames": 24,
       "fps": 6,
       "lighting": "studio-dark",
-      "engine": "eevee"
+      "engine": "cycles"
     }
   }
   ```
@@ -80,7 +80,7 @@ Base URL: `http://localhost:3000`
       "startAngle": 0,
       "direction": "cw",
       "includeEndFrame": false,
-      "engine": "eevee",
+      "engine": "cycles",
       "elapsedMs": 4200
     },
     "outputs": [

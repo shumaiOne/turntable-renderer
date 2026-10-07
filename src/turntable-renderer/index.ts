@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { basicAuth } from 'hono/basic-auth';
 import { filesApi } from './api/files.js';
 import { healthApi } from './api/health.js';
+import { renderApi } from './api/render.js';
 import { versionApi } from './api/version.js';
 import { defaultJanitor } from './files/janitor.js';
 import { AppError, createErrorResponse } from './render/errors.js';
@@ -35,8 +36,9 @@ app.use('*', async (c, next) => {
 app.route('/health', healthApi);
 app.route('/version', versionApi);
 
-// Files API
+// Files & Render APIs
 app.route('/v1/files', filesApi);
+app.route('/v1/render', renderApi);
 
 // Optional Basic Auth for protected endpoints
 if (settings.BASIC_AUTH_USERNAME && settings.BASIC_AUTH_PASSWORD) {

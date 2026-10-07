@@ -195,28 +195,11 @@ def setup_animation(root_empty, frames: int, total_degrees: float, start_angle: 
                 kf.interpolation = "LINEAR"
 
 
-def configure_render_engine(engine_name: str, samples: int = 16):
+def configure_render_engine(samples: int = 16):
     scene = bpy.context.scene
-    engine_name = engine_name.lower()
-
-    if engine_name in ("eevee", "blender_eevee", "blender_eevee_next"):
-        # Select appropriate Eevee engine name across Blender versions
-        for candidate in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
-            try:
-                scene.render.engine = candidate
-                break
-            except TypeError:
-                continue
-        try:
-            scene.eevee.taa_render_samples = samples
-        except AttributeError:
-            pass
-    elif engine_name == "cycles":
-        scene.render.engine = "CYCLES"
-        scene.cycles.device = "CPU"
-        scene.cycles.samples = samples
-    elif engine_name == "workbench":
-        scene.render.engine = "BLENDER_WORKBENCH"
+    scene.render.engine = "CYCLES"
+    scene.cycles.device = "CPU"
+    scene.cycles.samples = samples
 
 
 def configure_video_encoding(output_path: str, width: int, height: int, fps: int, format_type: str):
@@ -286,7 +269,6 @@ def main():
         elevation_deg = options.get("elevationDegrees", 10.0)
         lighting_type = options.get("lighting", "studio-dark")
         lighting_intensity = options.get("lightingIntensity", 1.0)
-        engine_name = options.get("engine", "eevee")
         samples = options.get("samples", 16)
         video_format = options.get("format", "mp4")
 
@@ -294,25 +276,56 @@ def main():
         cam_obj, distance = setup_camera(radius, framing_margin, fov_deg, elevation_deg)
         setup_lighting(lighting_type, radius, distance, lighting_intensity)
         setup_animation(root_empty, frames, total_degrees, start_angle, direction, include_end_frame)
-        configure_render_engine(engine_name, samples)
+        configure_render_engine(samples)
 
         if "video" in outputs:
-            video_output_path = os.path.join(output_dir, f"turntable.{video_format}")
-            configure_video_encoding(video_output_path, width, height, fps, video_format)
-            bpy.ops.render.render(animation=True)
-            artifacts.append({
-                "name": "video",
-                "filename": f"turntable.{video_format}",
-                "contentType": f"video/{video_format}",
-                "width": width,
-                "height": height,
-            })
+            if video_format == "png-sequence":
+                frames_dir = os.path.join(output_dir, "frames")
+                os.makedirs(frames_dir, exist_ok=True)
+                scene.render.resolution_x = width
+                scene.render.resolution_y = height
+                scene.render.fps = fps
+                scene.render.filepath = os.path.join(frames_dir, "frame_")
+                scene.render.image_settings.file_format = "PNG"
+                bpy.ops.render.render(animation=True)
+
+                import zipfile
+                zip_path = os.path.join(output_dir, "turntable_frames.zip")
+                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for root, _, files in os.walk(frames_dir):
+                        for f in sorted(files):
+                            abs_p = os.path.join(root, f)
+                            rel_p = os.path.relpath(abs_p, frames_dir)
+                            zf.write(abs_p, rel_p)
+
+                artifacts.append({
+                    "name": "video",
+                    "filename": "turntable_frames.zip",
+                    "contentType": "application/zip",
+                    "width": width,
+                    "height": height,
+                })
+            else:
+                video_output_path = os.path.join(output_dir, f"turntable.{video_format}")
+                configure_video_encoding(video_output_path, width, height, fps, video_format)
+                bpy.ops.render.render(animation=True)
+                artifacts.append({
+                    "name": "video",
+                    "filename": f"turntable.{video_format}",
+                    "contentType": f"video/{video_format}",
+                    "width": width,
+                    "height": height,
+                })
 
         if "poster" in outputs:
+            poster_opt = options.get("poster", {})
+            poster_angle = poster_opt.get("angle", 0.0) if isinstance(poster_opt, dict) else 0.0
+            sign = -1.0 if direction == "cw" else 1.0
+            root_empty.rotation_euler = (0.0, 0.0, sign * math.radians(poster_angle))
+
             poster_path = os.path.join(output_dir, "poster.png")
             bpy.context.scene.render.filepath = poster_path
             bpy.context.scene.render.image_settings.file_format = "PNG"
-            bpy.context.scene.frame_set(1)
             bpy.ops.render.render(write_still=True)
             artifacts.append({
                 "name": "poster",
