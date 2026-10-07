@@ -7,7 +7,7 @@ Third-Party Components and Attribution:
 
 1. Blender
    - Project: Blender (https://www.blender.org)
-   - Version: 4.5.x LTS
+   - Version: 5.2.x LTS (compatible with 4.5+ LTS)
    - License: GNU General Public License v2 or later (GPL-2.0+) / Blender Foundation
    - Copyright (c) Blender Foundation and contributors.
    - Note: Blender is invoked strictly as an external, isolated subprocess CLI tool.

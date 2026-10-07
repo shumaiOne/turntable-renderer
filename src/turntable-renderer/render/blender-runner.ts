@@ -25,7 +25,7 @@ export async function getBlenderVersion(
       throw new Error(`Blender exited with code ${exitCode}`);
     }
 
-    // Blender output format: "Blender 4.5.14 (hash ...)"
+    // Blender output format: "Blender 5.2.2 (hash ...)" or "Blender 4.5.14 (hash ...)"
     const match = stdout.match(/Blender\s+([0-9]+\.[0-9]+\.[0-9]+[a-z0-9-]*)/i);
     if (match?.[1]) {
       cachedBlenderVersion = match[1];

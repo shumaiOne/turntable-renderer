@@ -92,7 +92,7 @@ def import_dae(filepath: str):
 
 def import_3ds(filepath: str):
     raise ValueError(
-        "Autodesk 3DS (.3ds) format is not supported in Blender 4.5 LTS build."
+        "Autodesk 3DS (.3ds) format is not supported in modern Blender LTS builds."
     )
 
 

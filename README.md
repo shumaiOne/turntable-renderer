@@ -1,6 +1,6 @@
 # turntable-renderer
 
-Standalone 3D model turntable rendering HTTP server built with Bun, TypeScript, Hono, and isolated Blender 4.5 LTS subprocesses.
+Standalone 3D model turntable rendering HTTP server built with Bun, TypeScript, Hono, and isolated Blender 5.2 LTS subprocesses.
 
 ---
 
@@ -31,7 +31,7 @@ curl http://localhost:3000/health
 # {"status":"ok"}
 
 curl http://localhost:3000/version
-# {"app":"turntable-renderer","version":"0.1.0","blender":"4.5.14","runtime":"bun"}
+# {"app":"turntable-renderer","version":"0.1.0","blender":"5.2.2","runtime":"bun"}
 ```
 
 ---
@@ -40,7 +40,7 @@ curl http://localhost:3000/version
 
 Requirements:
 - [Bun 1.4+](https://bun.sh)
-- Blender 4.5 LTS (optional for local testing; Docker is recommended)
+- Blender 5.2 LTS (optional for local testing; Docker is recommended)
 
 ```bash
 # Install dependencies

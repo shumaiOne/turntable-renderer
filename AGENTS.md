@@ -1,6 +1,6 @@
 # Developer & Agent Guide — turntable-renderer
 
-Standalone 3D model turntable rendering HTTP server built with Bun, TypeScript, Hono, and isolated Blender 4.5 LTS subprocesses.
+Standalone 3D model turntable rendering HTTP server built with Bun, TypeScript, Hono, and isolated Blender 5.2 LTS subprocesses.
 
 ---
 

@@ -25,7 +25,7 @@ Base URL: `http://localhost:3000`
   {
     "app": "turntable-renderer",
     "version": "0.1.0",
-    "blender": "4.5.14",
+    "blender": "5.2.2",
     "runtime": "bun"
   }
   ```

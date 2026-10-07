@@ -1,6 +1,6 @@
 # Supported 3D Formats
 
-turntable-renderer v1 supports 3D formats natively importable by Blender 4.5 LTS:
+turntable-renderer v1 supports 3D formats natively importable by Blender 5.2 LTS (and 4.5+ LTS):
 
 | Extension | Format Name | Blender Importer | Notes |
 | :--- | :--- | :--- | :--- |
