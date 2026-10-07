@@ -82,7 +82,12 @@ def import_stl(filepath: str):
 
 
 def import_dae(filepath: str):
-    bpy.ops.wm.collada_import(filepath=filepath)
+    try:
+        bpy.ops.wm.collada_import(filepath=filepath)
+    except Exception:
+        raise ValueError(
+            "Collada (.dae) format is not supported in Blender 5.x."
+        )
 
 
 def import_3ds(filepath: str):

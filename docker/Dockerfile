@@ -1,7 +1,7 @@
 FROM oven/bun:1.4.2
 
-ARG BLENDER_VERSION=4.5.14
-ARG BLENDER_SHA256=9ba871ff2ecd36526b77432745980b7e6664ecd0c7ca11c48849073dcfe06da3
+ARG BLENDER_VERSION=5.2.2
+ARG BLENDER_SHA256=84098912789dc450e95697c4184fb8a90acbe5111c2ba4aede3fecb57806a168
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/opt/blender:${PATH}" \
@@ -27,9 +27,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install Blender 4.5.x LTS
+# Download and install Blender 5.2.x LTS
 RUN curl -fsSL -o /tmp/blender.tar.xz \
-    "https://download.blender.org/release/Blender4.5/blender-${BLENDER_VERSION}-linux-x64.tar.xz" && \
+    "https://download.blender.org/release/Blender5.2/blender-${BLENDER_VERSION}-linux-x64.tar.xz" && \
     echo "${BLENDER_SHA256}  /tmp/blender.tar.xz" | sha256sum -c - && \
     mkdir -p /opt/blender && \
     tar -xJf /tmp/blender.tar.xz -C /opt/blender --strip-components=1 && \

@@ -169,6 +169,20 @@ def normalize_scene():
     return root_empty, radius
 
 
+def get_action_fcurves(action):
+    if not action:
+        return []
+    if hasattr(action, "fcurves"):
+        return list(action.fcurves)
+    fcurves = []
+    if hasattr(action, "layers"):
+        for layer in action.layers:
+            for strip in layer.strips:
+                for cb in strip.channelbags:
+                    fcurves.extend(cb.fcurves)
+    return fcurves
+
+
 def setup_animation(root_empty, frames: int, total_degrees: float, start_angle: float, direction: str, include_end_frame: bool):
     scene = bpy.context.scene
     scene.frame_start = 1
@@ -189,10 +203,9 @@ def setup_animation(root_empty, frames: int, total_degrees: float, start_angle: 
         root_empty.keyframe_insert(data_path="rotation_euler", frame=i + 1)
 
     # Set linear interpolation for rotation
-    if root_empty.animation_data.action.fcurves:
-        for fcurve in root_empty.animation_data.action.fcurves:
-            for kf in fcurve.keyframe_points:
-                kf.interpolation = "LINEAR"
+    for fcurve in get_action_fcurves(root_empty.animation_data.action):
+        for kf in fcurve.keyframe_points:
+            kf.interpolation = "LINEAR"
 
 
 def configure_render_engine(samples: int = 16):
@@ -209,6 +222,8 @@ def configure_video_encoding(output_path: str, width: int, height: int, fps: int
     scene.render.fps = fps
 
     scene.render.filepath = output_path
+    if hasattr(scene.render.image_settings, "media_type"):
+        scene.render.image_settings.media_type = "VIDEO"
     scene.render.image_settings.file_format = "FFMPEG"
     scene.render.ffmpeg.format = "MPEG4" if format_type == "mp4" else "WEBM"
     scene.render.ffmpeg.codec = "H264"
@@ -286,6 +301,8 @@ def main():
                 scene.render.resolution_y = height
                 scene.render.fps = fps
                 scene.render.filepath = os.path.join(frames_dir, "frame_")
+                if hasattr(scene.render.image_settings, "media_type"):
+                    scene.render.image_settings.media_type = "IMAGE"
                 scene.render.image_settings.file_format = "PNG"
                 bpy.ops.render.render(animation=True)
 
@@ -325,6 +342,8 @@ def main():
 
             poster_path = os.path.join(output_dir, "poster.png")
             bpy.context.scene.render.filepath = poster_path
+            if hasattr(bpy.context.scene.render.image_settings, "media_type"):
+                bpy.context.scene.render.image_settings.media_type = "IMAGE"
             bpy.context.scene.render.image_settings.file_format = "PNG"
             bpy.ops.render.render(write_still=True)
             artifacts.append({

@@ -41,3 +41,9 @@
 - **Context**: In headless CPU environments (e.g. Docker on Linux without GPU passthrough using Mesa llvmpipe), Eevee Next takes ~3.8 min/frame due to heavy software OpenGL/Vulkan shader compilation and rasterization, while Workbench only produces flat unshaded CAD previews without realistic materials or lighting. Cycles on CPU with path tracing (16 samples default) delivers photorealistic PBR materials, shadows, and studio lighting in ~14.8s/frame (and ~0.5s for small models/fixtures).
 - **Decision**: For v1, hardcode Cycles engine on CPU. Do not expose or allow Eevee or Workbench in v1 options; reject non-cycles engine requests with `422 invalid_options`.
 - **Consequences**: Simplifies codebase, removes unnecessary environment variables and engine branch detection, and ensures consistent, deterministic, high-quality PBR renders across all platforms.
+
+## ADR 008: Support and Pin Blender 5.2.2 LTS
+- **Status**: Accepted
+- **Context**: Local host environments and updated deployments use Blender 5.2.2 LTS. Blender 5.x introduces layered/slotted action animation systems, splits `media_type` into `VIDEO` and `IMAGE` for FFmpeg render configurations, and removes the deprecated legacy Collada (.dae) operator.
+- **Decision**: Pin Blender `5.2.2` LTS (Linux x64 SHA-256: `84098912789dc450e95697c4184fb8a90acbe5111c2ba4aede3fecb57806a168`) in Dockerfile and update python helper scripts to support Blender 5.x animation and video encoding while maintaining backwards compatibility.
+- **Consequences**: Enables local development and production Docker runs using Blender 5.2.2 LTS without deprecation errors or animation curve lookup failures.
