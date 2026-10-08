@@ -54,15 +54,11 @@ export const RenderOptionsSchema = z
 
 export type RenderOptions = z.infer<typeof RenderOptionsSchema>;
 
-export const RenderOutputEnum = z.enum(['video', 'poster', 'glb', 'usdz']);
-export type RenderOutput = z.infer<typeof RenderOutputEnum>;
-
 export const RenderRequestSchema = z
   .object({
     input: z.object({
       fileId: z.string().min(1, 'input.fileId is required'),
     }),
-    outputs: z.array(RenderOutputEnum).default(['video']),
     options: RenderOptionsSchema.default({}),
   })
   .strict()
@@ -71,8 +67,7 @@ export const RenderRequestSchema = z
       // Reject transparent MP4
       const isTransparent = req.options?.background?.type === 'transparent';
       const isMp4 = (req.options?.format || 'mp4') === 'mp4';
-      const rendersVideo = req.outputs?.includes('video');
-      return !(isTransparent && isMp4 && rendersVideo);
+      return !(isTransparent && isMp4);
     },
     {
       message:
@@ -83,3 +78,90 @@ export const RenderRequestSchema = z
 
 export type RenderRequest = z.infer<typeof RenderRequestSchema>;
 export type RenderRequestInput = z.input<typeof RenderRequestSchema>;
+
+export interface RenderPosterOutput {
+  fileId: string;
+  size: number;
+  contentType: string;
+  width?: number;
+  height?: number;
+}
+
+export interface RenderVideoOutput {
+  fileId: string;
+  size: number;
+  contentType: string;
+  width?: number;
+  height?: number;
+}
+
+export interface RenderMetadata {
+  format: string;
+  upAxis: string;
+  unit: string;
+  dimensions: number[];
+  meshCount: number;
+  materialCount: number;
+  textureCount: number;
+  polygonCount: number;
+  triangleCount: number;
+  [key: string]: unknown;
+}
+
+export interface RenderStats {
+  width: number;
+  height: number;
+  frames: number;
+  fps: number;
+  durationSeconds: number;
+  degreesPerFrame: number;
+  startAngle: number;
+  direction: string;
+  includeEndFrame: boolean;
+  engine: string;
+  elapsedMs: number;
+}
+
+export interface RenderSyncResponse {
+  taskId: string;
+  status: 'queued' | 'rendering';
+  positionInQueue?: number;
+  metadata: RenderMetadata;
+  poster: RenderPosterOutput;
+}
+
+export interface RenderTaskResponse {
+  taskId: string;
+  status: 'queued' | 'rendering' | 'completed' | 'failed';
+  positionInQueue?: number;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  failedAt?: string;
+  render?: RenderStats;
+  video?: RenderVideoOutput;
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}
+
+export interface TaskRecord {
+  id: string;
+  fileId: string;
+  status: 'queued' | 'rendering' | 'completed' | 'failed';
+  options: RenderOptions;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  failedAt?: string;
+  expiresAt?: string;
+  render?: RenderStats;
+  video?: RenderVideoOutput;
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}

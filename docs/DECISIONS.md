@@ -59,3 +59,13 @@
 - **Context**: Frame.io turntable references place the camera dead-center at eye-level ($0^\circ$ elevation angle, $Z = 0$), looking directly into the vertical and horizontal center of the model. Furthermore, measurements against `reference/frameio.mp4` showed the model filled $\sim 83\%$ of the frame (bounding box width 326px vs 290px), corresponding to a tighter camera distance ($~10.4\text{m}$ vs $11.7\text{m}$).
 - **Decision**: Set default `elevationDegrees` to `0` and `framingMargin` to `1.2` in `RENDER_DEFAULTS` and Blender render scripts. The camera rests at $Z = 0$, $Y = -distance$, Euler rotation $90^\circ$ around $X$, perfectly horizontal and centered at the model's bounding midpoint, with distance computed as $(radius \times 1.20) / \tan(fov / 2)$.
 - **Consequences**: Exact visual and dimensional match ($\ge 98\%$) with Frame.io turntable reference renders across all asset dimensions.
+
+## ADR 011: Bifurcated Sync Poster & Async Video Rendering Architecture
+- **Status**: Accepted
+- **Context**: Turntable video animation rendering is computationally intensive and can take up to 20 minutes for large models. Clients calling a synchronous API are forced to keep HTTP connections open or hit gateway timeouts.
+- **Decision**: Bifurcate the render pipeline into a fast synchronous phase and an asynchronous video phase:
+  1. `POST /v1/render` extracts 3D metadata and renders a 1-frame poster image synchronously (~0.5–1.5s), enqueues an asynchronous video task, and immediately returns 200 OK with `taskId`, `status`, `metadata`, and `poster`. The `outputs` parameter is removed.
+  2. Background FIFO worker processes video rendering sequentially (`MAX_CONCURRENT_VIDEO_RENDERS=1`).
+  3. `GET /v1/render/tasks/:id` provides task inspection (`queued`, `rendering`, `completed`, `failed`).
+  4. Task state is persisted to `${DATA_DIR}/t_${id}.json` following the zero-database design.
+- **Consequences**: Fast HTTP responses, resilient background rendering, zero gateway timeouts.

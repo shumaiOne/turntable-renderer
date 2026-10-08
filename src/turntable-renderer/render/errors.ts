@@ -5,6 +5,7 @@ export type ErrorCode =
   | 'bad_request'
   | 'unauthorized'
   | 'input_not_found'
+  | 'task_not_found'
   | 'file_in_use'
   | 'upload_too_large'
   | 'unsupported_format'

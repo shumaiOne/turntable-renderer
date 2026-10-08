@@ -66,3 +66,12 @@ describe('Render Defaults', () => {
     expect(RENDER_DEFAULTS.envRotation).toBe(0);
   });
 });
+
+describe('Render Task Endpoint Routing', () => {
+  it('GET /v1/render/tasks/nonexistent returns 404 task_not_found', async () => {
+    const res = await app.request('/v1/render/tasks/t_nonexistent');
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { code: string; message: string };
+    expect(body.code).toBe('task_not_found');
+  });
+});

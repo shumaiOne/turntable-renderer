@@ -38,27 +38,33 @@ Base URL: `http://localhost:3000`
 - `DELETE /v1/files/:id`: Delete file (`409 file_in_use` if pinned by a running render).
 
 ### 4. Render Execution (`POST /v1/render`)
-- Synchronous rendering endpoint.
+- Synchronously extracts model metadata and renders a 1-frame poster image, then enqueues an asynchronous background video render task.
 - Request Body:
   ```json
   {
     "input": {
       "fileId": "f_abc123"
     },
-    "outputs": ["video", "poster"],
     "options": {
       "width": 1080,
       "height": 1080,
       "frames": 24,
       "fps": 6,
       "lighting": "studio-dark",
-      "engine": "cycles"
+      "engine": "cycles",
+      "format": "mp4",
+      "poster": {
+        "angle": 0
+      }
     }
   }
   ```
-- Response:
+- Response (`200 OK`):
   ```json
   {
+    "taskId": "t_9a2f7c4b1e8d3a01",
+    "status": "queued",
+    "positionInQueue": 1,
     "metadata": {
       "format": "glb",
       "upAxis": "Y",
@@ -70,6 +76,35 @@ Base URL: `http://localhost:3000`
       "polygonCount": 8500,
       "triangleCount": 16200
     },
+    "poster": {
+      "fileId": "f_poster123",
+      "size": 42100,
+      "contentType": "image/png",
+      "width": 1080,
+      "height": 1080
+    }
+  }
+  ```
+
+### 5. Render Task Status (`GET /v1/render/tasks/:id`)
+- Query the status and output of an asynchronous video render task.
+- Response when Queued / Rendering (`200 OK`):
+  ```json
+  {
+    "taskId": "t_9a2f7c4b1e8d3a01",
+    "status": "queued",
+    "positionInQueue": 1,
+    "createdAt": "2026-10-08T11:00:00.000Z"
+  }
+  ```
+- Response when Completed (`200 OK`):
+  ```json
+  {
+    "taskId": "t_9a2f7c4b1e8d3a01",
+    "status": "completed",
+    "createdAt": "2026-10-08T11:00:00.000Z",
+    "startedAt": "2026-10-08T11:00:01.000Z",
+    "completedAt": "2026-10-08T11:02:15.000Z",
     "render": {
       "width": 1080,
       "height": 1080,
@@ -81,18 +116,30 @@ Base URL: `http://localhost:3000`
       "direction": "cw",
       "includeEndFrame": false,
       "engine": "cycles",
-      "elapsedMs": 4200
+      "elapsedMs": 134000
     },
-    "outputs": [
-      {
-        "name": "video",
-        "fileId": "f_xyz789",
-        "size": 275000,
-        "contentType": "video/mp4",
-        "width": 1080,
-        "height": 1080
-      }
-    ]
+    "video": {
+      "fileId": "f_xyz789",
+      "size": 2850000,
+      "contentType": "video/mp4",
+      "width": 1080,
+      "height": 1080
+    }
+  }
+  ```
+- Response when Failed (`200 OK`):
+  ```json
+  {
+    "taskId": "t_9a2f7c4b1e8d3a01",
+    "status": "failed",
+    "createdAt": "2026-10-08T11:00:00.000Z",
+    "startedAt": "2026-10-08T11:00:01.000Z",
+    "failedAt": "2026-10-08T11:00:05.000Z",
+    "error": {
+      "code": "render_failed",
+      "message": "Blender render process crashed",
+      "details": {}
+    }
   }
   ```
 

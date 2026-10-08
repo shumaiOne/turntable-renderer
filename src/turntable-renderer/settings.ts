@@ -17,10 +17,14 @@ const SettingsSchema = z.object({
   MAX_WIDTH: z.coerce.number().default(3840),
   MAX_HEIGHT: z.coerce.number().default(3840),
   MAX_SAMPLES: z.coerce.number().default(256),
-  RENDER_TIMEOUT_SECONDS: z.coerce.number().default(120),
+  RENDER_TIMEOUT_SECONDS: z.coerce.number().default(1200),
+  POSTER_TIMEOUT_SECONDS: z.coerce.number().default(60),
 
   // Concurrency & Queue
   MAX_CONCURRENT_RENDERS: z.coerce.number().default(1),
+  MAX_CONCURRENT_VIDEO_RENDERS: z.coerce.number().default(1),
+  MAX_CONCURRENT_POSTER_RENDERS: z.coerce.number().default(2),
+  TASK_TTL_SECONDS: z.coerce.number().default(86400),
   QUEUE_SIZE: z.coerce.number().default(10),
   QUEUE_WAIT_SECONDS: z.coerce.number().default(60),
 

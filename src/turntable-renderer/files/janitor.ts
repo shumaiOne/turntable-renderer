@@ -1,14 +1,26 @@
+import { type TaskManager, defaultTaskManager } from '../render/task-manager.js';
 import type { FileStore } from './file-store.js';
 import { defaultFileStore } from './local-disk-store.js';
 
 export class Janitor {
   private fileStore: FileStore;
+  private taskManager: TaskManager;
   private intervalMs: number;
   private timer: Timer | null = null;
 
-  constructor(fileStore: FileStore = defaultFileStore, intervalSeconds = 60) {
+  constructor(
+    fileStore: FileStore = defaultFileStore,
+    taskManagerOrInterval?: TaskManager | number,
+    intervalSeconds = 60,
+  ) {
     this.fileStore = fileStore;
-    this.intervalMs = intervalSeconds * 1000;
+    if (typeof taskManagerOrInterval === 'number') {
+      this.taskManager = defaultTaskManager;
+      this.intervalMs = taskManagerOrInterval * 1000;
+    } else {
+      this.taskManager = taskManagerOrInterval ?? defaultTaskManager;
+      this.intervalMs = intervalSeconds * 1000;
+    }
   }
 
   start(): void {
@@ -29,10 +41,11 @@ export class Janitor {
     }
   }
 
-  async runCleanup(): Promise<{ expiredFiles: number; tempFiles: number }> {
+  async runCleanup(): Promise<{ expiredFiles: number; tempFiles: number; expiredTasks: number }> {
     const expiredFiles = await this.fileStore.cleanExpiredFiles();
     const tempFiles = await this.fileStore.cleanOrphanedTempFiles();
-    return { expiredFiles, tempFiles };
+    const expiredTasks = await this.taskManager.cleanExpiredTasks();
+    return { expiredFiles, tempFiles, expiredTasks };
   }
 }
 

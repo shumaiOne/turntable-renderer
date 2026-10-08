@@ -1,10 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { defaultFileStore } from '../../src/turntable-renderer/files/local-disk-store.js';
 import { app } from '../../src/turntable-renderer/index.js';
 import { getBlenderVersion } from '../../src/turntable-renderer/render/blender-runner.js';
-import { RenderManager } from '../../src/turntable-renderer/render/render-manager.js';
+import type {
+  RenderSyncResponse,
+  RenderTaskResponse,
+} from '../../src/turntable-renderer/render/options.js';
 import { generateObj } from '../fixtures/generate-fixtures.js';
 
 const TEST_DATA_DIR = join(import.meta.dir, '../../data_render_test');
@@ -43,7 +46,6 @@ describe('Render API & Pipeline Integration Tests', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         input: { fileId: 'f_nonexistent' },
-        outputs: ['video'],
       }),
     });
 
@@ -58,7 +60,6 @@ describe('Render API & Pipeline Integration Tests', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         input: { fileId: testInputFileId },
-        outputs: ['video'],
         options: {
           unknownOption: 123,
         },
@@ -77,7 +78,6 @@ describe('Render API & Pipeline Integration Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           input: { fileId: testInputFileId },
-          outputs: ['poster'],
           options: {
             engine: invalidEngine,
           },
@@ -96,7 +96,6 @@ describe('Render API & Pipeline Integration Tests', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         input: { fileId: testInputFileId },
-        outputs: ['video'],
         options: {
           background: { type: 'transparent' },
           format: 'mp4',
@@ -121,7 +120,6 @@ describe('Render API & Pipeline Integration Tests', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         input: { fileId: blendFile.id },
-        outputs: ['video'],
       }),
     });
 
@@ -130,7 +128,7 @@ describe('Render API & Pipeline Integration Tests', () => {
     expect(body.code).toBe('unsupported_format');
   });
 
-  it('end-to-end: upload -> render -> download outputs (video and poster)', async () => {
+  it('end-to-end: sync metadata + poster -> poll async task -> download video', async () => {
     if (!blenderAvailable) {
       console.warn('Skipping end-to-end render test: Blender is not installed on this host.');
       return;
@@ -141,7 +139,6 @@ describe('Render API & Pipeline Integration Tests', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         input: { fileId: testInputFileId },
-        outputs: ['video', 'poster'],
         options: {
           width: 256,
           height: 256,
@@ -153,108 +150,86 @@ describe('Render API & Pipeline Integration Tests', () => {
     });
 
     expect(renderRes.status).toBe(200);
-    const renderBody = (await renderRes.json()) as {
-      metadata: { format: string; meshCount: number; polygonCount: number; dimensions: number[] };
-      render?: { width: number; height: number; frames: number; fps: number; engine: string };
-      outputs: Array<{ name: string; fileId: string; size: number; contentType: string }>;
-    };
+    const syncBody = (await renderRes.json()) as RenderSyncResponse;
+
+    // Verify sync response structure
+    expect(syncBody.taskId).toBeDefined();
+    expect(syncBody.taskId.startsWith('t_')).toBe(true);
+    expect(['queued', 'rendering']).toContain(syncBody.status);
+    expect(typeof syncBody.positionInQueue).toBe('number');
 
     // Verify metadata
-    expect(renderBody.metadata.format).toBe('obj');
-    expect(renderBody.metadata.meshCount).toBeGreaterThan(0);
-    expect(renderBody.metadata.polygonCount).toBeGreaterThan(0);
+    expect(syncBody.metadata).toBeDefined();
+    expect(syncBody.metadata.format).toBe('obj');
+    expect(syncBody.metadata.meshCount).toBeGreaterThan(0);
+    expect(syncBody.metadata.polygonCount).toBeGreaterThan(0);
 
-    // Verify render settings returned
-    expect(renderBody.render).toBeDefined();
-    expect(renderBody.render?.width).toBe(256);
-    expect(renderBody.render?.frames).toBe(2);
-    expect(renderBody.render?.engine).toBe('cycles');
+    // Verify poster
+    expect(syncBody.poster).toBeDefined();
+    expect(syncBody.poster.fileId).toBeDefined();
+    expect(syncBody.poster.contentType).toBe('image/png');
+    expect(syncBody.poster.width).toBe(256);
+    expect(syncBody.poster.height).toBe(256);
 
-    // Verify outputs
-    expect(renderBody.outputs.length).toBe(2);
+    // Download generated poster output via Files API
+    const posterDownload = await app.request(`/v1/files/${syncBody.poster.fileId}`);
+    expect(posterDownload.status).toBe(200);
+    expect(posterDownload.headers.get('Content-Type')).toBe('image/png');
+    const posterBytes = await posterDownload.arrayBuffer();
+    expect(posterBytes.byteLength).toBeGreaterThan(0);
 
-    const videoOutput = renderBody.outputs.find((o) => o.name === 'video');
-    expect(videoOutput).toBeDefined();
-    expect(videoOutput?.contentType).toBe('video/mp4');
+    // Poll task status until completed
+    const taskId = syncBody.taskId;
+    let completedTask: RenderTaskResponse | null = null;
+    const maxAttempts = 60;
 
-    const posterOutput = renderBody.outputs.find((o) => o.name === 'poster');
-    expect(posterOutput).toBeDefined();
-    expect(posterOutput?.contentType).toBe('image/png');
+    for (let i = 0; i < maxAttempts; i++) {
+      const taskRes = await app.request(`/v1/render/tasks/${taskId}`);
+      expect(taskRes.status).toBe(200);
+      const taskBody = (await taskRes.json()) as RenderTaskResponse;
+
+      if (taskBody.status === 'completed') {
+        completedTask = taskBody;
+        break;
+      }
+      if (taskBody.status === 'failed') {
+        throw new Error(`Task failed unexpectedly: ${JSON.stringify(taskBody.error)}`);
+      }
+
+      await Bun.sleep(1000);
+    }
+
+    expect(completedTask).not.toBeNull();
+    if (!completedTask) return;
+
+    expect(completedTask.status).toBe('completed');
+    expect(completedTask.render).toBeDefined();
+    expect(completedTask.render?.width).toBe(256);
+    expect(completedTask.render?.frames).toBe(2);
+    expect(completedTask.render?.engine).toBe('cycles');
+
+    // Verify video output
+    expect(completedTask.video).toBeDefined();
+    expect(completedTask.video?.contentType).toBe('video/mp4');
+    expect(completedTask.video?.fileId).toBeDefined();
 
     // Download generated video output via Files API
-    const downloadRes = await app.request(`/v1/files/${videoOutput?.fileId}`);
-    expect(downloadRes.status).toBe(200);
-    expect(downloadRes.headers.get('Content-Type')).toBe('video/mp4');
-    const videoBytes = await downloadRes.arrayBuffer();
+    const videoDownload = await app.request(`/v1/files/${completedTask.video?.fileId}`);
+    expect(videoDownload.status).toBe(200);
+    expect(videoDownload.headers.get('Content-Type')).toBe('video/mp4');
+    const videoBytes = await videoDownload.arrayBuffer();
     expect(videoBytes.byteLength).toBeGreaterThan(0);
-  }, 60000);
 
-  it('metadata-only and conversion-only requests skip animation rendering', async () => {
-    if (!blenderAvailable) {
-      return;
-    }
+    // Verify input file is now unpinned
+    const fileInfoRes = await app.request(`/v1/files/${testInputFileId}/info`);
+    const fileInfo = (await fileInfoRes.json()) as { pinned: boolean };
+    expect(fileInfo.pinned).toBe(false);
+  }, 90000);
 
-    const convRes = await app.request('/v1/render', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: { fileId: testInputFileId },
-        outputs: ['glb'],
-      }),
-    });
-
-    expect(convRes.status).toBe(200);
-    const body = (await convRes.json()) as {
-      metadata: Record<string, unknown>;
-      render?: unknown;
-      outputs: Array<{ name: string; contentType: string; fileId: string }>;
-    };
-
-    expect(body.metadata).toBeDefined();
-    expect(body.render).toBeUndefined(); // Animation render skipped
-    expect(body.outputs.length).toBe(1);
-    expect(body.outputs[0].name).toBe('glb');
-    expect(body.outputs[0].contentType).toBe('model/gltf-binary');
-  });
-
-  it('enforces queue limits and rejects excess requests with 503', async () => {
-    const queueManager = new RenderManager({
-      maxConcurrentRenders: 1,
-      queueSize: 1,
-      queueWaitSeconds: 1,
-    });
-
-    // Simulate busy queue by blocking the single slot
-    const slowTask = queueManager.render({
-      input: { fileId: testInputFileId },
-      outputs: ['glb'],
-      options: {},
-    });
-
-    // Second task enters the queue (queue size 1)
-    const queuedTask = queueManager.render({
-      input: { fileId: testInputFileId },
-      outputs: ['glb'],
-      options: {},
-    });
-
-    // Third task exceeds queue capacity and must reject with 503
-    let errorCaught = false;
-    try {
-      await queueManager.render({
-        input: { fileId: testInputFileId },
-        outputs: ['glb'],
-        options: {},
-      });
-    } catch (err: unknown) {
-      errorCaught = true;
-      const appErr = err as { code: string; status: number };
-      expect(appErr.code).toBe('queue_full');
-      expect(appErr.status).toBe(503);
-    }
-    expect(errorCaught).toBe(true);
-
-    // Clean up
-    await Promise.allSettled([slowTask, queuedTask]);
+  it('GET /v1/render/tasks/:id returns 404 for unknown task ID', async () => {
+    const res = await app.request('/v1/render/tasks/t_unknown999');
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('task_not_found');
   });
 });
