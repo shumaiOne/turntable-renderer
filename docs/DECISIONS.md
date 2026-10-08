@@ -69,3 +69,10 @@
   3. `GET /v1/render/tasks/:id` provides task inspection (`queued`, `rendering`, `completed`, `failed`).
   4. Task state is persisted to `${DATA_DIR}/t_${id}.json` following the zero-database design.
 - **Consequences**: Fast HTTP responses, resilient background rendering, zero gateway timeouts.
+
+## ADR 012: Docker Hub Automated Release Workflow & Linux amd64 Target
+- **Status**: Accepted
+- **Context**: Need automated CI to build and push container images to Docker Hub (`shumaione/turntable-renderer`) on main branch pushes, version tags (`v*`), and manual dispatch.
+- **Decision**: Introduce `.github/workflows/release.yaml` authenticating against Docker Hub using `DOCKERHUB_TOKEN`. Target `linux/amd64` exclusively, as upstream Blender Foundation only provides official Linux prebuilt binaries for x86_64 (`linux-x64`). Leverage GitHub Actions build cache (`type=gha`) to accelerate container builds.
+- **Consequences**: Deterministic automated image releases aligned with Shumai release conventions without external registry dependencies.
+
