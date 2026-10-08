@@ -30,8 +30,8 @@ Inspected from `reference/frameio.mp4` via `ffprobe`:
 - **Framing**:
   - `framingMode = fixed` (computed once from the model's bounding sphere).
   - Target: Bounding-box center translated to `(0, 0, 0)`.
-  - Margin: `framingMargin ≈ 1.35` (model fills ~74% of the frame).
-  - Elevation: `10°` above horizontal plane.
+  - Margin: `framingMargin ≈ 1.20` (model fills ~83% of the frame).
+  - Elevation: `0°` (horizontal eye-level plane centered at object midpoint).
   - FOV: `35°` perspective lens.
 
 ---

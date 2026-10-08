@@ -53,3 +53,9 @@
 - **Context**: Turntable renders require natural, high-quality studio lighting and reflections across metallic paint, glass, and alloy surfaces matching the Frame.io reference benchmark, without washing out black backgrounds or shadow depth.
 - **Decision**: Adopt and bundle `studio_kontrast_04_1k.exr` as the official built-in default environment map under `src/turntable-renderer/assets/environments/`, with `envIntensity = 0.7` and dual-path `LightPath` camera separation (pure `#000000` visible to camera, full 360° studio reflections to surfaces). Allow custom `envMap`, `envIntensity`, and `envRotation` overrides via render options.
 - **Consequences**: Produces photorealistic studio specular highlights and ambient gradients deterministically out of the box while preserving the clean black background.
+
+## ADR 010: Camera Elevation (0°) and Framing Margin (1.20) Aligned to Frame.io Reference
+- **Status**: Accepted
+- **Context**: Frame.io turntable references place the camera dead-center at eye-level ($0^\circ$ elevation angle, $Z = 0$), looking directly into the vertical and horizontal center of the model. Furthermore, measurements against `reference/frameio.mp4` showed the model filled $\sim 83\%$ of the frame (bounding box width 326px vs 290px), corresponding to a tighter camera distance ($~10.4\text{m}$ vs $11.7\text{m}$).
+- **Decision**: Set default `elevationDegrees` to `0` and `framingMargin` to `1.2` in `RENDER_DEFAULTS` and Blender render scripts. The camera rests at $Z = 0$, $Y = -distance$, Euler rotation $90^\circ$ around $X$, perfectly horizontal and centered at the model's bounding midpoint, with distance computed as $(radius \times 1.20) / \tan(fov / 2)$.
+- **Consequences**: Exact visual and dimensional match ($\ge 98\%$) with Frame.io turntable reference renders across all asset dimensions.

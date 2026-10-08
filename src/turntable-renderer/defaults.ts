@@ -33,8 +33,8 @@ export const RENDER_DEFAULTS = {
 
   // Camera & Framing
   framingMode: 'fixed' as const,
-  framingMargin: 1.35,
-  elevationDegrees: 10,
+  framingMargin: 1.2,
+  elevationDegrees: 0,
   fovDegrees: 35,
 
   // Lighting & Background

@@ -51,8 +51,8 @@ describe('Render Defaults', () => {
     expect(RENDER_DEFAULTS.degreesPerFrame).toBe(15);
     expect(RENDER_DEFAULTS.direction).toBe('cw');
     expect(RENDER_DEFAULTS.includeEndFrame).toBe(false);
-    expect(RENDER_DEFAULTS.framingMargin).toBe(1.35);
-    expect(RENDER_DEFAULTS.elevationDegrees).toBe(10);
+    expect(RENDER_DEFAULTS.framingMargin).toBe(1.2);
+    expect(RENDER_DEFAULTS.elevationDegrees).toBe(0);
     expect(RENDER_DEFAULTS.fovDegrees).toBe(35);
     expect(RENDER_DEFAULTS.background.type).toBe('color');
     if (RENDER_DEFAULTS.background.type === 'color') {

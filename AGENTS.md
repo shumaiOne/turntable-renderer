@@ -32,7 +32,7 @@ Standalone 3D model turntable rendering HTTP server built with Bun, TypeScript, 
    - Concurrency is managed via an in-process semaphore (`MAX_CONCURRENT_RENDERS=1` default) and FIFO queue (`QUEUE_SIZE`, `QUEUE_WAIT_SECONDS`).
    - If the queue is full or wait time expires, return `503 Service Unavailable` with `Retry-After`.
 7. **Deterministic Visual Defaults**:
-   - All visual defaults (1080×1080, 6 fps, 24 frames, 15°/frame, clockwise, `framingMargin = 1.35`, `studio-dark` lighting, pure black `#000000` background) must reside in `src/turntable-renderer/defaults.ts`.
+   - All visual defaults (1080×1080, 6 fps, 24 frames, 15°/frame, clockwise, `framingMargin = 1.2`, `studio-dark` lighting, pure black `#000000` background) must reside in `src/turntable-renderer/defaults.ts`.
 
 ---
 
