@@ -14,6 +14,7 @@ import type { FileStore } from '../files/file-store.js';
 import { defaultFileStore } from '../files/local-disk-store.js';
 import { settings } from '../settings.js';
 import { runBlenderScript } from './blender-runner.js';
+import { AppError } from './errors.js';
 import type {
   RenderOptions,
   RenderStats,
@@ -128,12 +129,17 @@ export class TaskManager {
     this.processNext();
   }
 
-  async createTask(fileId: string, options: RenderOptions): Promise<TaskRecord> {
+  async createTask(
+    fileId: string,
+    options: RenderOptions,
+    posterFileId?: string,
+  ): Promise<TaskRecord> {
     const id = generateTaskId();
     const now = new Date().toISOString();
     const task: TaskRecord = {
       id,
       fileId,
+      posterFileId,
       status: 'queued',
       options,
       createdAt: now,
@@ -171,6 +177,42 @@ export class TaskManager {
     }
 
     return response;
+  }
+
+  async deleteTask(id: string): Promise<boolean> {
+    const task = await this.loadTask(id);
+    if (!task) return false;
+
+    if (task.status === 'rendering') {
+      throw new AppError(
+        'file_in_use',
+        `Cannot delete render task '${id}' while actively rendering`,
+        409,
+      );
+    }
+
+    const queueIdx = this.queue.indexOf(id);
+    if (queueIdx !== -1) {
+      this.queue.splice(queueIdx, 1);
+    }
+
+    await this.fileStore.unpinFile(task.fileId).catch(() => {});
+    await this.fileStore.deleteFile(task.fileId).catch(() => {});
+
+    if (task.posterFileId) {
+      await this.fileStore.deleteFile(task.posterFileId).catch(() => {});
+    }
+
+    if (task.video?.fileId) {
+      await this.fileStore.deleteFile(task.video.fileId).catch(() => {});
+    }
+
+    const filePath = this.getTaskFilePath(id);
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+
+    return true;
   }
 
   private processNext(): void {

@@ -32,14 +32,6 @@ app.use('*', async (c, next) => {
   );
 });
 
-// Unauthenticated health & version endpoints
-app.route('/health', healthApi);
-app.route('/version', versionApi);
-
-// Files & Render APIs
-app.route('/v1/files', filesApi);
-app.route('/v1/render', renderApi);
-
 // Optional Basic Auth for protected endpoints
 if (settings.BASIC_AUTH_USERNAME && settings.BASIC_AUTH_PASSWORD) {
   app.use(
@@ -50,6 +42,14 @@ if (settings.BASIC_AUTH_USERNAME && settings.BASIC_AUTH_PASSWORD) {
     }),
   );
 }
+
+// Unauthenticated health & version endpoints
+app.route('/health', healthApi);
+app.route('/version', versionApi);
+
+// Files & Render APIs
+app.route('/v1/files', filesApi);
+app.route('/v1/render', renderApi);
 
 // Global 404 handler
 app.notFound((c) => {

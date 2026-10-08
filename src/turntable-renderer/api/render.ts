@@ -35,3 +35,13 @@ renderApi.get('/tasks/:id', async (c) => {
   }
   return c.json(task, 200);
 });
+
+// DELETE /v1/render/tasks/:id - Delete render task and clean up associated files
+renderApi.delete('/tasks/:id', async (c) => {
+  const id = c.req.param('id');
+  const deleted = await defaultTaskManager.deleteTask(id);
+  if (!deleted) {
+    throw new AppError('task_not_found', `Render task '${id}' not found`, 404);
+  }
+  return c.json({ status: 'deleted', id }, 200);
+});

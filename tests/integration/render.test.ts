@@ -224,10 +224,42 @@ describe('Render API & Pipeline Integration Tests', () => {
     const fileInfoRes = await app.request(`/v1/files/${testInputFileId}/info`);
     const fileInfo = (await fileInfoRes.json()) as { pinned: boolean };
     expect(fileInfo.pinned).toBe(false);
+
+    // Delete render task via DELETE /v1/render/tasks/:id and verify cleanup
+    const deleteRes = await app.request(`/v1/render/tasks/${syncBody.taskId}`, {
+      method: 'DELETE',
+    });
+    expect(deleteRes.status).toBe(200);
+    const deleteBody = (await deleteRes.json()) as { status: string; id: string };
+    expect(deleteBody.status).toBe('deleted');
+    expect(deleteBody.id).toBe(syncBody.taskId);
+
+    // Verify task itself is now 404
+    const deletedTaskRes = await app.request(`/v1/render/tasks/${syncBody.taskId}`);
+    expect(deletedTaskRes.status).toBe(404);
+
+    // Verify input file was deleted
+    const deletedInputRes = await app.request(`/v1/files/${testInputFileId}/info`);
+    expect(deletedInputRes.status).toBe(404);
+
+    // Verify poster file was deleted
+    const deletedPosterRes = await app.request(`/v1/files/${syncBody.poster.fileId}/info`);
+    expect(deletedPosterRes.status).toBe(404);
+
+    // Verify video file was deleted
+    const deletedVideoRes = await app.request(`/v1/files/${completedTask.video?.fileId}/info`);
+    expect(deletedVideoRes.status).toBe(404);
   }, 90000);
 
   it('GET /v1/render/tasks/:id returns 404 for unknown task ID', async () => {
     const res = await app.request('/v1/render/tasks/t_unknown999');
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('task_not_found');
+  });
+
+  it('DELETE /v1/render/tasks/:id returns 404 for unknown task ID', async () => {
+    const res = await app.request('/v1/render/tasks/t_unknown999', { method: 'DELETE' });
     expect(res.status).toBe(404);
     const body = (await res.json()) as { code: string };
     expect(body.code).toBe('task_not_found');

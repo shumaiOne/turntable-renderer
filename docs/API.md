@@ -143,6 +143,17 @@ Base URL: `http://localhost:3000`
   }
   ```
 
+### 6. Delete Render Task (`DELETE /v1/render/tasks/:id`)
+- Deletes a completed or queued render task and automatically deletes its associated input model file, rendered poster file, rendered video file, and task record.
+- Returns `409 file_in_use` if task is actively rendering.
+- Response (`200 OK`):
+  ```json
+  {
+    "status": "deleted",
+    "id": "t_9a2f7c4b1e8d3a01"
+  }
+  ```
+
 ---
 
 ## Error Response Format

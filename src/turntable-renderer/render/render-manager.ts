@@ -241,7 +241,7 @@ export class RenderManager {
       );
 
       // Create and enqueue async video render task (file stays pinned until video task finishes)
-      const task = await this.taskManager.createTask(fileId, request.options);
+      const task = await this.taskManager.createTask(fileId, request.options, savedPoster.id);
       posterRendered = true;
 
       const positionInQueue = this.taskManager.getQueuePosition(task.id);

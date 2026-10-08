@@ -150,6 +150,7 @@ export interface RenderTaskResponse {
 export interface TaskRecord {
   id: string;
   fileId: string;
+  posterFileId?: string;
   status: 'queued' | 'rendering' | 'completed' | 'failed';
   options: RenderOptions;
   createdAt: string;

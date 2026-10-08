@@ -74,4 +74,11 @@ describe('Render Task Endpoint Routing', () => {
     const body = (await res.json()) as { code: string; message: string };
     expect(body.code).toBe('task_not_found');
   });
+
+  it('DELETE /v1/render/tasks/nonexistent returns 404 task_not_found', async () => {
+    const res = await app.request('/v1/render/tasks/t_nonexistent', { method: 'DELETE' });
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { code: string; message: string };
+    expect(body.code).toBe('task_not_found');
+  });
 });
