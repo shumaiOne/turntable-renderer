@@ -7,9 +7,9 @@ const SettingsSchema = z.object({
 
   // Storage
   DATA_DIR: z.string().default('./data'),
-  MAX_UPLOAD_MB: z.coerce.number().default(500),
+  MAX_UPLOAD_MB: z.coerce.number().default(5120),
   FILE_TTL_SECONDS: z.coerce.number().default(86400),
-  MAX_STORAGE_GB: z.coerce.number().default(50),
+  MAX_STORAGE_GB: z.coerce.number().default(100),
   MAX_CONCURRENT_UPLOADS: z.coerce.number().default(10),
 
   // Render Constraints & Timeouts
