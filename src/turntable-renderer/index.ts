@@ -77,6 +77,7 @@ export default {
   port: settings.PORT,
   hostname: settings.HOST,
   fetch: app.fetch,
+  maxRequestBodySize: settings.MAX_UPLOAD_MB * 1024 * 1024,
 };
 
 if (import.meta.main) {
