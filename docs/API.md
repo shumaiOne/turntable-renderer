@@ -54,7 +54,9 @@ Base URL: `http://localhost:3000`
       "engine": "cycles",
       "format": "mp4",
       "poster": {
-        "angle": 0
+        "angle": 0,
+        "width": 300,
+        "height": 300
       }
     }
   }
@@ -80,8 +82,8 @@ Base URL: `http://localhost:3000`
       "fileId": "f_poster123",
       "size": 42100,
       "contentType": "image/png",
-      "width": 1080,
-      "height": 1080
+      "width": 300,
+      "height": 300
     }
   }
   ```

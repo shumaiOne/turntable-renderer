@@ -350,8 +350,8 @@ def main():
         root_empty, radius = normalize_scene()
 
         # Options with defaults
-        width = options.get("width", 300)
-        height = options.get("height", 300)
+        width = options.get("width", 1080)
+        height = options.get("height", 1080)
         frames = options.get("frames", 24)
         fps = options.get("fps", 6)
         total_degrees = options.get("totalDegrees", 360.0)
@@ -426,15 +426,17 @@ def main():
                 })
 
         if "poster" in outputs:
-            poster_opt = options.get("poster", {})
-            poster_angle = poster_opt.get("angle", 0.0) if isinstance(poster_opt, dict) else 0.0
+            poster_opt = options.get("poster", {}) if isinstance(options.get("poster"), dict) else {}
+            poster_width = poster_opt.get("width", 300)
+            poster_height = poster_opt.get("height", 300)
+            poster_angle = poster_opt.get("angle", 0.0)
             sign = -1.0 if direction == "cw" else 1.0
             root_empty.rotation_euler = (0.0, 0.0, sign * math.radians(poster_angle))
 
             poster_path = os.path.join(output_dir, "poster.png")
             bpy.context.scene.render.filepath = poster_path
-            bpy.context.scene.render.resolution_x = width
-            bpy.context.scene.render.resolution_y = height
+            bpy.context.scene.render.resolution_x = poster_width
+            bpy.context.scene.render.resolution_y = poster_height
             if hasattr(bpy.context.scene.render.image_settings, "media_type"):
                 bpy.context.scene.render.image_settings.media_type = "IMAGE"
             bpy.context.scene.render.image_settings.file_format = "PNG"
@@ -443,8 +445,8 @@ def main():
                 "name": "poster",
                 "filename": "poster.png",
                 "contentType": "image/png",
-                "width": width,
-                "height": height,
+                "width": poster_width,
+                "height": poster_height,
             })
 
     if "glb" in outputs:

@@ -16,9 +16,20 @@ export const BackgroundSchema = z.discriminatedUnion('type', [
   BackgroundTransparentSchema,
 ]);
 
-export const PosterOptionsSchema = z.object({
-  angle: z.number().default(0),
-});
+export const PosterOptionsSchema = z
+  .object({
+    angle: z.number().default(RENDER_DEFAULTS.posterAngle),
+    width: z.number().int().min(128).max(settings.MAX_WIDTH).default(RENDER_DEFAULTS.posterWidth),
+    height: z
+      .number()
+      .int()
+      .min(128)
+      .max(settings.MAX_HEIGHT)
+      .default(RENDER_DEFAULTS.posterHeight),
+  })
+  .strict();
+
+export type PosterOptions = z.infer<typeof PosterOptionsSchema>;
 
 export const RenderOptionsSchema = z
   .object({
@@ -48,7 +59,7 @@ export const RenderOptionsSchema = z
     crf: z.number().int().min(0).max(51).optional(),
     pixFmt: z.literal('yuv420p').default(RENDER_DEFAULTS.pixFmt),
     keyframeInterval: z.number().int().min(1).optional(),
-    poster: PosterOptionsSchema.optional(),
+    poster: PosterOptionsSchema.default({}),
   })
   .strict();
 

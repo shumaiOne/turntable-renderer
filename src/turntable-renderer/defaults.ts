@@ -17,12 +17,17 @@ export interface BackgroundTransparent {
 export type BackgroundSetting = BackgroundColor | BackgroundTransparent;
 
 export const RENDER_DEFAULTS = {
-  // Dimensions & Frame Rate
-  width: 300,
-  height: 300,
+  // Dimensions & Frame Rate (Video)
+  width: 1080,
+  height: 1080,
   frames: 24,
   fps: 6,
   durationSeconds: 4.0,
+
+  // Poster Defaults
+  posterWidth: 300,
+  posterHeight: 300,
+  posterAngle: 0,
 
   // Rotation
   totalDegrees: 360,

@@ -76,13 +76,14 @@
 - **Decision**: Introduce `.github/workflows/release.yaml` authenticating against Docker Hub using `DOCKERHUB_TOKEN`. Target `linux/amd64` exclusively, as upstream Blender Foundation only provides official Linux prebuilt binaries for x86_64 (`linux-x64`). Leverage GitHub Actions build cache (`type=gha`) to accelerate container builds.
 - **Consequences**: Deterministic automated image releases aligned with Shumai release conventions without external registry dependencies.
 
-## ADR 013: Default Render Dimensions (300×300) and Scene Resolution Enforcement
+## ADR 013: Separated Video (1080×1080) and Poster (300×300) Default Resolutions
 - **Status**: Accepted
-- **Context**: Turntable previews and poster images require compact, fast 300×300 pixel defaults. Furthermore, Blender was previously rendering single-frame posters at its factory default resolution (1920×1080) because `scene.render.resolution_x` and `scene.render.resolution_y` were only assigned inside the video render branches.
+- **Context**: Turntable video renders require high-definition 1080×1080 resolution conforming to Frame.io reference benchmark standards, whereas synchronous poster thumbnails require compact, fast 300×300 pixel rendering for instant preview cards. Previously, width/height settings were shared, and Blender had a bug rendering posters at 1920×1080 due to unconfigured scene resolution in poster passes.
 - **Decision**:
-  1. Update default `width` and `height` to `300` in `RENDER_DEFAULTS` and Blender render options fallback.
-  2. Unconditionally set `scene.render.resolution_x = width` and `scene.render.resolution_y = height` for all rendering paths in `src/turntable-renderer/blender/render.py`.
-- **Consequences**: 300×300 default render dimensions across poster and video pipelines, with strict adherence to requested dimensions for all outputs.
+  1. Maintain root video defaults at `width: 1080` and `height: 1080` in `RENDER_DEFAULTS`.
+  2. Introduce dedicated poster default dimensions (`posterWidth: 300`, `posterHeight: 300`) and extend `PosterOptionsSchema` with customizable `width` and `height` properties defaulting to 300×300.
+  3. In `render.py`, configure `scene.render.resolution_x` and `scene.render.resolution_y` independently: poster pass applies `poster_width` and `poster_height`, while video pass applies `width` and `height`.
+- **Consequences**: Fast synchronous poster generation (~0.5–1s) at 300×300 by default, high-definition 1080×1080 video output, and full independent configurability for both passes.
 
 ## ADR 014: Single-File Executable Packaging & Lean Debian Runner Image
 - **Status**: Accepted

@@ -57,8 +57,10 @@ describe('Blender Native Importers Integration Tests', () => {
         outputDir: outDir,
         outputs: ['poster'],
         options: {
-          width: 512,
-          height: 512,
+          poster: {
+            width: 512,
+            height: 512,
+          },
           frames: 1,
           fps: 6,
           samples: 1,

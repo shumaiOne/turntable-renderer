@@ -163,14 +163,21 @@ describe('Render API & Pipeline Integration Tests', () => {
     expect(posterBuffer.readUInt32BE(20)).toBe(300);
 
     // Wait for background task to finish before deleting
+    let completedTask: RenderTaskResponse | null = null;
     for (let i = 0; i < 30; i++) {
       const taskRes = await app.request(`/v1/render/tasks/${body.taskId}`);
       const taskBody = (await taskRes.json()) as RenderTaskResponse;
       if (taskBody.status === 'completed' || taskBody.status === 'failed') {
+        completedTask = taskBody;
         break;
       }
       await Bun.sleep(200);
     }
+    expect(completedTask).toBeDefined();
+    expect(completedTask?.status).toBe('completed');
+    expect(completedTask?.video?.width).toBe(1080);
+    expect(completedTask?.video?.height).toBe(1080);
+
     const delRes = await app.request(`/v1/render/tasks/${body.taskId}`, { method: 'DELETE' });
     expect(delRes.status).toBe(200);
   });
@@ -189,6 +196,10 @@ describe('Render API & Pipeline Integration Tests', () => {
         options: {
           width: 256,
           height: 256,
+          poster: {
+            width: 256,
+            height: 256,
+          },
           frames: 2,
           fps: 6,
           samples: 1,
