@@ -10,6 +10,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
+import { RENDER_DEFAULTS } from '../defaults.js';
 import type { FileStore } from '../files/file-store.js';
 import { defaultFileStore } from '../files/local-disk-store.js';
 import { settings } from '../settings.js';
@@ -382,8 +383,8 @@ export class TaskManager {
       };
 
       const renderStats: RenderStats = {
-        width: opts.width ?? 1080,
-        height: opts.height ?? 1080,
+        width: opts.width ?? RENDER_DEFAULTS.width,
+        height: opts.height ?? RENDER_DEFAULTS.height,
         frames,
         fps: opts.fps ?? 6,
         durationSeconds: frames / (opts.fps ?? 6),

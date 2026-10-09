@@ -18,8 +18,8 @@ export type BackgroundSetting = BackgroundColor | BackgroundTransparent;
 
 export const RENDER_DEFAULTS = {
   // Dimensions & Frame Rate
-  width: 1080,
-  height: 1080,
+  width: 300,
+  height: 300,
   frames: 24,
   fps: 6,
   durationSeconds: 4.0,

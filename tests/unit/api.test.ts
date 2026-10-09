@@ -42,9 +42,9 @@ describe('API Health & Version Endpoints', () => {
 });
 
 describe('Render Defaults', () => {
-  it('matches Frame.io reference specifications', () => {
-    expect(RENDER_DEFAULTS.width).toBe(1080);
-    expect(RENDER_DEFAULTS.height).toBe(1080);
+  it('matches default specifications', () => {
+    expect(RENDER_DEFAULTS.width).toBe(300);
+    expect(RENDER_DEFAULTS.height).toBe(300);
     expect(RENDER_DEFAULTS.frames).toBe(24);
     expect(RENDER_DEFAULTS.fps).toBe(6);
     expect(RENDER_DEFAULTS.durationSeconds).toBe(4.0);

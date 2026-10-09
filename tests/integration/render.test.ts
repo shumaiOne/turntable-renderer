@@ -128,6 +128,53 @@ describe('Render API & Pipeline Integration Tests', () => {
     expect(body.code).toBe('unsupported_format');
   });
 
+  it('renders poster with default 300x300 resolution when width/height options are omitted', async () => {
+    if (!blenderAvailable) return;
+
+    const objData = new TextEncoder().encode(generateObj());
+    const uploadRes = await app.request('/v1/files?filename=default_cube.obj', {
+      method: 'POST',
+      body: objData,
+    });
+    const { id: fileId } = (await uploadRes.json()) as { id: string };
+
+    const renderRes = await app.request('/v1/render', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: { fileId },
+        options: {
+          samples: 1,
+          frames: 1,
+        },
+      }),
+    });
+
+    expect(renderRes.status).toBe(200);
+    const body = (await renderRes.json()) as RenderSyncResponse;
+    expect(body.poster.width).toBe(300);
+    expect(body.poster.height).toBe(300);
+
+    const posterDownload = await app.request(`/v1/files/${body.poster.fileId}`);
+    expect(posterDownload.status).toBe(200);
+    const posterBytes = await posterDownload.arrayBuffer();
+    const posterBuffer = Buffer.from(posterBytes);
+    expect(posterBuffer.readUInt32BE(16)).toBe(300);
+    expect(posterBuffer.readUInt32BE(20)).toBe(300);
+
+    // Wait for background task to finish before deleting
+    for (let i = 0; i < 30; i++) {
+      const taskRes = await app.request(`/v1/render/tasks/${body.taskId}`);
+      const taskBody = (await taskRes.json()) as RenderTaskResponse;
+      if (taskBody.status === 'completed' || taskBody.status === 'failed') {
+        break;
+      }
+      await Bun.sleep(200);
+    }
+    const delRes = await app.request(`/v1/render/tasks/${body.taskId}`, { method: 'DELETE' });
+    expect(delRes.status).toBe(200);
+  });
+
   it('end-to-end: sync metadata + poster -> poll async task -> download video', async () => {
     if (!blenderAvailable) {
       console.warn('Skipping end-to-end render test: Blender is not installed on this host.');
@@ -177,6 +224,9 @@ describe('Render API & Pipeline Integration Tests', () => {
     expect(posterDownload.headers.get('Content-Type')).toBe('image/png');
     const posterBytes = await posterDownload.arrayBuffer();
     expect(posterBytes.byteLength).toBeGreaterThan(0);
+    const posterBuffer = Buffer.from(posterBytes);
+    expect(posterBuffer.readUInt32BE(16)).toBe(256);
+    expect(posterBuffer.readUInt32BE(20)).toBe(256);
 
     // Poll task status until completed
     const taskId = syncBody.taskId;

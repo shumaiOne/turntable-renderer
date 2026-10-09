@@ -91,6 +91,9 @@ describe('Blender Native Importers Integration Tests', () => {
 
       const posterPath = join(outDir, 'poster.png');
       expect(existsSync(posterPath)).toBe(true);
+      const posterBuf = readFileSync(posterPath);
+      expect(posterBuf.readUInt32BE(16)).toBe(512);
+      expect(posterBuf.readUInt32BE(20)).toBe(512);
     }, 30000);
   }
 

@@ -76,3 +76,11 @@
 - **Decision**: Introduce `.github/workflows/release.yaml` authenticating against Docker Hub using `DOCKERHUB_TOKEN`. Target `linux/amd64` exclusively, as upstream Blender Foundation only provides official Linux prebuilt binaries for x86_64 (`linux-x64`). Leverage GitHub Actions build cache (`type=gha`) to accelerate container builds.
 - **Consequences**: Deterministic automated image releases aligned with Shumai release conventions without external registry dependencies.
 
+## ADR 013: Default Render Dimensions (300×300) and Scene Resolution Enforcement
+- **Status**: Accepted
+- **Context**: Turntable previews and poster images require compact, fast 300×300 pixel defaults. Furthermore, Blender was previously rendering single-frame posters at its factory default resolution (1920×1080) because `scene.render.resolution_x` and `scene.render.resolution_y` were only assigned inside the video render branches.
+- **Decision**:
+  1. Update default `width` and `height` to `300` in `RENDER_DEFAULTS` and Blender render options fallback.
+  2. Unconditionally set `scene.render.resolution_x = width` and `scene.render.resolution_y = height` for all rendering paths in `src/turntable-renderer/blender/render.py`.
+- **Consequences**: 300×300 default render dimensions across poster and video pipelines, with strict adherence to requested dimensions for all outputs.
+

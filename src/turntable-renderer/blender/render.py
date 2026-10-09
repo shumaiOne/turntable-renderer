@@ -350,8 +350,8 @@ def main():
         root_empty, radius = normalize_scene()
 
         # Options with defaults
-        width = options.get("width", 1080)
-        height = options.get("height", 1080)
+        width = options.get("width", 300)
+        height = options.get("height", 300)
         frames = options.get("frames", 24)
         fps = options.get("fps", 6)
         total_degrees = options.get("totalDegrees", 360.0)
@@ -381,6 +381,8 @@ def main():
         setup_lighting(lighting_type, radius, distance, lighting_intensity)
         setup_animation(root_empty, frames, total_degrees, start_angle, direction, include_end_frame)
         configure_render_engine(samples)
+        bpy.context.scene.render.resolution_x = width
+        bpy.context.scene.render.resolution_y = height
 
         if "video" in outputs:
             if video_format == "png-sequence":
@@ -431,6 +433,8 @@ def main():
 
             poster_path = os.path.join(output_dir, "poster.png")
             bpy.context.scene.render.filepath = poster_path
+            bpy.context.scene.render.resolution_x = width
+            bpy.context.scene.render.resolution_y = height
             if hasattr(bpy.context.scene.render.image_settings, "media_type"):
                 bpy.context.scene.render.image_settings.media_type = "IMAGE"
             bpy.context.scene.render.image_settings.file_format = "PNG"
