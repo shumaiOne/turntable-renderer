@@ -84,3 +84,21 @@
   2. Unconditionally set `scene.render.resolution_x = width` and `scene.render.resolution_y = height` for all rendering paths in `src/turntable-renderer/blender/render.py`.
 - **Consequences**: 300×300 default render dimensions across poster and video pipelines, with strict adherence to requested dimensions for all outputs.
 
+## ADR 014: Single-File Executable Packaging & Lean Debian Runner Image
+- **Status**: Accepted
+- **Context**: The server's only external runtime dependencies are `hono` and `zod`. The previous Docker setup used `oven/bun:1.4.2` as the final runtime base, keeping the full Bun CLI (~95MB), `node_modules` (including large devDependencies like `@biomejs/biome` and `typescript`, ~100MB+), and TypeScript source files in production, which increased container image size and startup latency.
+- **Decision**:
+  1. Package the application into a standalone Single-File Executable via Bun's bundler:
+     `bun build --compile --minify --bytecode --sourcemap src/turntable-renderer/index.ts --outfile dist/turntable-renderer`.
+  2. Implement `getBlenderScriptPath()` with an optional `BLENDER_SCRIPT_PATH` setting to reliably discover physical Blender Python scripts on disk (`render.py`, `importers.py`, `metadata.py`) across both development mode and compiled binary mode, bypassing Bun's internal virtual memory filesystem (`/$bunfs/`).
+  3. Restructure `docker/Dockerfile` as a 3-stage multi-stage build:
+     - Stage 1 (`builder`): Compiles the single-file binary using `oven/bun:1.4.2`.
+     - Stage 2 (`blender-installer`): Downloads, verifies SHA256, and decompresses Blender 5.2.2 LTS (`linux-x64`).
+     - Stage 3 (`runner`): Uses minimal `debian:bookworm-slim` (~75MB base) containing only the standalone binary, Blender, Blender runtime shared libraries, and Blender scripts/assets.
+- **Consequences**:
+  - Image size reduced by ~240MB uncompressed and 70MB compressed.
+  - Zero development dependencies or package managers in the production runtime container.
+  - Fast cold start via pre-compiled bytecode (`--bytecode`).
+  - Strict subprocess isolation preserved.
+
+

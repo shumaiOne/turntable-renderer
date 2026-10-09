@@ -4,7 +4,7 @@ import { extname, join } from 'node:path';
 import type { FileStore } from '../files/file-store.js';
 import { defaultFileStore } from '../files/local-disk-store.js';
 import { settings } from '../settings.js';
-import { runBlenderScript } from './blender-runner.js';
+import { getBlenderScriptPath, runBlenderScript } from './blender-runner.js';
 import { AppError } from './errors.js';
 import type { RenderRequestInput, RenderSyncResponse } from './options.js';
 import { RenderRequestSchema } from './options.js';
@@ -156,7 +156,7 @@ export class RenderManager {
 
       await Bun.write(taskJsonPath, JSON.stringify(taskConfig, null, 2));
 
-      const scriptPath = join(import.meta.dir, '../blender/render.py');
+      const scriptPath = getBlenderScriptPath('render.py');
 
       let renderResultRaw: { exitCode: number; stdout: string; stderr: string; durationMs: number };
       try {

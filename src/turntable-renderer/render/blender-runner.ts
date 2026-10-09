@@ -1,6 +1,47 @@
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { settings } from '../settings.js';
 
 let cachedBlenderVersion: string | null = null;
+
+/**
+ * Resolves the filesystem path to a Blender python script.
+ * Handles both development mode (source checkout) and standalone single-file binary execution.
+ */
+export function getBlenderScriptPath(scriptName = 'render.py'): string {
+  if (settings.BLENDER_SCRIPT_PATH && existsSync(settings.BLENDER_SCRIPT_PATH)) {
+    return settings.BLENDER_SCRIPT_PATH;
+  }
+
+  if (Bun.isStandaloneExecutable) {
+    const execDir = dirname(process.execPath);
+    const candidates = [
+      join(execDir, 'src/turntable-renderer/blender', scriptName),
+      join(execDir, 'blender', scriptName),
+      join(process.cwd(), 'src/turntable-renderer/blender', scriptName),
+      join(process.cwd(), 'blender', scriptName),
+      join('/app/src/turntable-renderer/blender', scriptName),
+    ];
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  // Development / test mode fallback relative to source directory
+  const devPath = join(import.meta.dir, '../blender', scriptName);
+  if (existsSync(devPath)) {
+    return devPath;
+  }
+
+  const cwdPath = join(process.cwd(), 'src/turntable-renderer/blender', scriptName);
+  if (existsSync(cwdPath)) {
+    return cwdPath;
+  }
+
+  return devPath;
+}
 
 /**
  * Inspects and returns the installed Blender version.

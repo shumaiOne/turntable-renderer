@@ -30,6 +30,7 @@ const SettingsSchema = z.object({
 
   // Blender Subprocess
   BLENDER_PATH: z.string().default('blender'),
+  BLENDER_SCRIPT_PATH: z.string().optional(),
 
   // Auth (Optional Basic Auth)
   BASIC_AUTH_USERNAME: z.string().optional(),

@@ -12,7 +12,9 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "build": "bun build --compile --minify --bytecode --sourcemap src/turntable-renderer/index.ts --outfile dist/turntable-renderer",
+    "build:linux-x64": "bun build --compile --target=bun-linux-x64 --minify --bytecode --sourcemap src/turntable-renderer/index.ts --outfile dist/turntable-renderer-linux-x64"
   },
   "keywords": ["3d", "turntable", "render", "blender", "hono", "bun"],
   "license": "GPL-3.0",
