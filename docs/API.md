@@ -3,7 +3,19 @@
 ## Overview
 turntable-renderer provides a clean, synchronous HTTP API for uploading 3D models and rendering animated turntables, poster frames, and converted formats.
 
-Base URL: `http://localhost:3000`
+Base URL: `http://localhost:3000` (or `http://localhost:3003` when using recommended Docker port mapping)
+
+---
+
+## Authentication
+Authentication is optional and configured via environment variables:
+- `TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME`
+- `TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD`
+
+When configured:
+- All `/v1/*` endpoints require HTTP Basic Auth (`Authorization: Basic <credentials>`).
+- Unauthenticated or invalid requests return `401 Unauthorized` with `WWW-Authenticate: Basic realm="Secure Area"`.
+- Public endpoints (`/health`, `/version`) remain accessible without credentials.
 
 ---
 

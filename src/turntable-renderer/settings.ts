@@ -33,8 +33,8 @@ const SettingsSchema = z.object({
   BLENDER_SCRIPT_PATH: z.string().optional(),
 
   // Auth (Optional Basic Auth)
-  BASIC_AUTH_USERNAME: z.string().optional(),
-  BASIC_AUTH_PASSWORD: z.string().optional(),
+  TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME: z.string().optional(),
+  TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD: z.string().optional(),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;

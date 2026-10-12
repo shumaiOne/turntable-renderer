@@ -14,24 +14,94 @@ Standalone 3D model turntable rendering HTTP server built with Bun, TypeScript, 
 
 ## Quickstart
 
-### Running with Docker
+### Running with Docker (Recommended)
+
+The easiest way to run `turntable-renderer` is using the prebuilt Docker image from Docker Hub.
+
+```bash
+docker run -d --rm \
+  --name turntable-renderer \
+  -p 3003:3000 \
+  -v $(pwd)/data:/app/data \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
+  shumaione/turntable-renderer:latest
+```
+
+> **Note**: Host port `3003` maps to internal container port `3000`. Persistent file storage is stored in `./data`.
+
+#### Verification
+
+```bash
+# Health check (unauthenticated)
+curl http://localhost:3003/health
+# {"status":"ok"}
+
+# Version information (unauthenticated)
+curl http://localhost:3003/version
+# {"app":"turntable-renderer","version":"0.1.0","blender":"5.2.2","runtime":"bun"}
+
+# Authenticated API access (e.g. file listing/upload)
+curl -u admin:your_password http://localhost:3003/v1/files
+```
+
+---
+
+## GPU Acceleration
+
+A GPU is optional, the CPU pipeline is fast enough for smooth sessions on modest hardware. When a GPU is mounted into the container it is automatically detected and configured for hardware rendering.
+
+### Intel / AMD (open source drivers)
+
+One flag is all it takes:
+
+```bash
+docker run -d --rm \
+  --name turntable-renderer \
+  --shm-size=1gb \
+  -p 3003:3000 \
+  --device /dev/dri \
+  -v $(pwd)/data:/app/data \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
+  shumaione/turntable-renderer:latest
+```
+
+### Nvidia (proprietary drivers)
+
+Requires host driver 580 or newer installed with the NVIDIA Container Toolkit (`--runtime nvidia`):
+
+```bash
+docker run -d --rm \
+  --name turntable-renderer \
+  --shm-size=1gb \
+  -p 3003:3000 \
+  --runtime nvidia \
+  --gpus all \
+  --device /dev/nvidia-modeset \
+  -v $(pwd)/data:/app/data \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
+  shumaione/turntable-renderer:latest
+```
+
+---
+
+## Building from Source
+
+To build and run the Docker image locally from source:
 
 ```bash
 # Build the Docker image
 docker build -t turntable-renderer -f docker/Dockerfile .
 
 # Run the container
-docker run -p 3000:3000 -v $(pwd)/data:/app/data turntable-renderer
-```
-
-### Health Check
-
-```bash
-curl http://localhost:3000/health
-# {"status":"ok"}
-
-curl http://localhost:3000/version
-# {"app":"turntable-renderer","version":"0.1.0","blender":"5.2.2","runtime":"bun"}
+docker run -d --rm \
+  -p 3003:3000 \
+  -v $(pwd)/data:/app/data \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
+  -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
+  turntable-renderer
 ```
 
 ---
@@ -52,7 +122,7 @@ bun run check
 # Typecheck
 bun run typecheck
 
-# Run unit tests
+# Run unit and integration tests
 bun test
 
 # Start development server

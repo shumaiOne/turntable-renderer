@@ -102,4 +102,17 @@
   - Fast cold start via pre-compiled bytecode (`--bytecode`).
   - Strict subprocess isolation preserved.
 
+## ADR 015: HTTP Basic Auth Standardization (401 Response & TURNTABLE_RENDERER_API_BASIC_AUTH_* Schema)
+- **Status**: Accepted
+- **Context**:
+  1. Hono's `basicAuth` middleware throws `HTTPException(401)`. Because `app.onError` previously only checked for `AppError`, unauthenticated requests fell back to logging a 500 error stack trace and returning HTTP 500 `render_failed`.
+  2. Auth configuration environment variables were named generically (`BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD`), requiring standardization to `TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME` and `TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD`.
+- **Decision**:
+  1. In `app.onError`, explicitly catch `HTTPException`. When `status === 401`, extract `WWW-Authenticate` header, attach it to the response, and return HTTP 401 with standard payload format `{ "code": "unauthorized", "message": "Unauthorized", "details": {} }`.
+  2. Strictly replace settings schema keys with `TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME` and `TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD` without fallback.
+  3. Export `createApp(settings)` from `index.ts` to enable deterministic, isolated unit testing of auth-protected applications.
+  4. Standardize host port mapping recommendation to `3003:3000` in documentation to prevent host port 3000 collision.
+- **Consequences**:
+  Fully conforms to the HTTP error response contract for 401 unauthorized, ensures clean error logs without false 500 alarms, provides consistent project-prefixed environment variables, and ensures port 3003 recommendation in Docker quickstart.
+
 
