@@ -55,6 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     procps \
+    tini \
     libxkbcommon0 \
     libxi6 \
     libxxf86vm1 \
@@ -96,4 +97,5 @@ VOLUME ["/app/data"]
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/app/turntable-renderer"]

@@ -107,4 +107,18 @@ if (import.meta.main) {
       message: `Turntable renderer server listening on http://${defaultSettings.HOST}:${defaultSettings.PORT}`,
     }),
   );
+
+  const shutdown = (signal: string) => {
+    console.log(
+      JSON.stringify({
+        level: 'info',
+        message: `Received ${signal}, shutting down gracefully...`,
+      }),
+    );
+    defaultJanitor.stop();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }

@@ -115,4 +115,13 @@
 - **Consequences**:
   Fully conforms to the HTTP error response contract for 401 unauthorized, ensures clean error logs without false 500 alarms, provides consistent project-prefixed environment variables, and ensures port 3003 recommendation in Docker quickstart.
 
-
+## ADR 016: Container Init Supervisor (Tini) & Graceful Signal Handling
+- **Status**: Accepted
+- **Context**: When running inside Docker containers where `/app/turntable-renderer` is PID 1, the Linux kernel disables default signal termination actions (`SIG_DFL`) for fatal signals such as `SIGINT` (Ctrl+C) and `SIGTERM`. As a result, pressing Ctrl+C or executing `docker stop` would not terminate the container until hard-killed. Additionally, orphaned child processes spawned by Blender subprocesses risk accumulating as zombies without an init process.
+- **Decision**:
+  1. Add `tini` to the runner stage in `docker/Dockerfile` and configure `ENTRYPOINT ["/usr/bin/tini", "--"]`.
+  2. In `src/turntable-renderer/index.ts`, register explicit `SIGINT` and `SIGTERM` listeners during standalone execution to stop the janitor background timer and perform a clean exit (`process.exit(0)`).
+- **Consequences**:
+  - Interactive terminal runs exit promptly upon receiving `Ctrl+C`.
+  - Container stops gracefully without waiting for `SIGKILL` timeout.
+  - Orphaned subprocesses from Blender execution are properly reaped by `tini`.
