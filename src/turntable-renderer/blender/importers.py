@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import tempfile
 import zipfile
 import bpy
 
@@ -58,8 +60,11 @@ def import_gltf(filepath: str):
 
 
 def import_usd(filepath: str):
-    if filepath.lower().endswith(".usdz"):
-        validate_usdz_archive(filepath)
+    bpy.ops.wm.usd_import(filepath=filepath)
+
+
+def import_usdz(filepath: str):
+    validate_usdz_archive(filepath)
     bpy.ops.wm.usd_import(filepath=filepath)
 
 
@@ -102,7 +107,7 @@ IMPORTER_REGISTRY = {
     "usd": import_usd,
     "usda": import_usd,
     "usdc": import_usd,
-    "usdz": import_usd,
+    "usdz": import_usdz,
     "fbx": import_fbx,
     "obj": import_obj,
     "stl": import_stl,
@@ -121,4 +126,28 @@ def import_model(filepath: str, ext: str) -> None:
         raise ValueError(f"Unsupported file format: .{clean_ext}")
 
     importer_fn = IMPORTER_REGISTRY[clean_ext]
-    importer_fn(filepath)
+
+    # Certain importers (notably OpenUSD for usd/usda/usdc/usdz) strictly resolve
+    # their format plugins based on file extension. If the input file is stored
+    # without its format extension (e.g. as an opaque .bin blob), create a temporary
+    # symlink with the extension so the importer succeeds without duplicating data.
+    temp_symlink = None
+    target_path = filepath
+    if not filepath.lower().endswith(f".{clean_ext}"):
+        temp_dir = tempfile.mkdtemp(prefix="turntable_model_")
+        temp_symlink = os.path.join(temp_dir, f"model.{clean_ext}")
+        try:
+            os.symlink(os.path.abspath(filepath), temp_symlink)
+        except OSError:
+            shutil.copyfile(filepath, temp_symlink)
+        target_path = temp_symlink
+
+    try:
+        importer_fn(target_path)
+    finally:
+        if temp_symlink:
+            try:
+                os.unlink(temp_symlink)
+                os.rmdir(os.path.dirname(temp_symlink))
+            except Exception:
+                pass

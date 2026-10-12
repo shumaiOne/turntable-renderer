@@ -312,7 +312,8 @@ export class TaskManager {
         } else if (
           errorOutput.includes('External reference rejected') ||
           errorOutput.includes('Invalid .gltf') ||
-          errorOutput.includes('Path traversal')
+          errorOutput.includes('Path traversal') ||
+          errorOutput.includes('Invalid USDZ file')
         ) {
           code = 'import_failed';
         }

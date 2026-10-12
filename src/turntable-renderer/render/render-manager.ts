@@ -192,7 +192,8 @@ export class RenderManager {
         if (
           errorOutput.includes('External reference rejected') ||
           errorOutput.includes('Invalid .gltf') ||
-          errorOutput.includes('Path traversal')
+          errorOutput.includes('Path traversal') ||
+          errorOutput.includes('Invalid USDZ file')
         ) {
           throw new AppError('import_failed', errorOutput.trim(), 422);
         }

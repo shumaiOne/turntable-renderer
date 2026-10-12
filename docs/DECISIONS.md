@@ -125,3 +125,12 @@
   - Interactive terminal runs exit promptly upon receiving `Ctrl+C`.
   - Container stops gracefully without waiting for `SIGKILL` timeout.
   - Orphaned subprocesses from Blender execution are properly reaped by `tini`.
+
+## ADR 017: Extension-Aware Symlinking for OpenUSD Importers (.usd, .usda, .usdc, .usdz)
+- **Status**: Accepted
+- **Context**: `LocalDiskStore` stores all file blobs as opaque `${DATA_DIR}/f_${id}.bin` files on disk. While glTF and OBJ loaders can parse buffers regardless of file extension, Pixar OpenUSD (`bpy.ops.wm.usd_import`) dynamically selects SdfLayer format plugins by inspecting the file extension. Passing a `.bin` file causes OpenUSD to fail with `Cannot determine file format for @...bin:SDF_FORMAT_ARGS:target=usd@` and `Failed to open layer`. Additionally, USDZ archive path-traversal validation checked for `.usdz` extension in the file path, which was bypassed when files ended in `.bin`.
+- **Decision**:
+  1. In `src/turntable-renderer/blender/importers.py`, separate `import_usdz` from `import_usd` so that archive validation is unconditionally run for USDZ formats regardless of path naming.
+  2. In `import_model`, if the input file does not end with `.{ext}`, create a temporary symlink (with fallback to copy) having the proper extension (`f"model.{clean_ext}"`) in a temporary directory, and unlink it in a `finally` block after import finishes.
+  3. Map `Invalid USDZ file` errors in `render-manager.ts` and `task-manager.ts` to HTTP 422 `import_failed`.
+- **Consequences**: USD (`.usd`, `.usda`, `.usdc`) and USDZ files render cleanly through the HTTP API and background task runner while preserving zero-database file storage conventions (`${DATA_DIR}/f_${id}.bin`).

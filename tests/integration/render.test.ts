@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { defaultFileStore } from '../../src/turntable-renderer/files/local-disk-store.js';
 import { app } from '../../src/turntable-renderer/index.js';
@@ -324,5 +324,82 @@ describe('Render API & Pipeline Integration Tests', () => {
     expect(res.status).toBe(404);
     const body = (await res.json()) as { code: string };
     expect(body.code).toBe('task_not_found');
+  });
+
+  it('renders USD and USDZ models via API', async () => {
+    if (!blenderAvailable) {
+      console.warn('Skipping USD/USDZ test: Blender is not installed.');
+      return;
+    }
+
+    const fixturesDir = join(import.meta.dir, '../fixtures/models');
+
+    for (const ext of ['usda', 'usdz'] as const) {
+      const fileBuffer = readFileSync(join(fixturesDir, `cube.${ext}`));
+      const uploadRes = await app.request(`/v1/files?filename=cube.${ext}`, {
+        method: 'POST',
+        body: fileBuffer,
+      });
+      expect(uploadRes.status).toBe(201);
+      const uploadBody = (await uploadRes.json()) as { id: string };
+
+      const renderRes = await app.request('/v1/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { fileId: uploadBody.id },
+          options: {
+            poster: { width: 256, height: 256 },
+            frames: 1,
+            samples: 1,
+          },
+        }),
+      });
+
+      expect(renderRes.status).toBe(200);
+      const syncBody = (await renderRes.json()) as RenderSyncResponse;
+      expect(syncBody.metadata.format).toBe(ext);
+      expect(syncBody.poster.fileId).toBeDefined();
+
+      // Wait for async task to complete before cleanup
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const tRes = await app.request(`/v1/render/tasks/${syncBody.taskId}`);
+        const tBody = (await tRes.json()) as RenderTaskResponse;
+        if (tBody.status === 'completed' || tBody.status === 'failed') break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+
+      // Clean up task
+      await app.request(`/v1/render/tasks/${syncBody.taskId}`, { method: 'DELETE' });
+    }
+  }, 60000);
+
+  it('rejects corrupt USDZ archives with 422 import_failed', async () => {
+    if (!blenderAvailable) {
+      return;
+    }
+
+    const corruptData = new TextEncoder().encode('not a valid zip file');
+    const uploadRes = await app.request('/v1/files?filename=corrupt.usdz', {
+      method: 'POST',
+      body: corruptData,
+    });
+    expect(uploadRes.status).toBe(201);
+    const uploadBody = (await uploadRes.json()) as { id: string };
+
+    const renderRes = await app.request('/v1/render', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: { fileId: uploadBody.id },
+      }),
+    });
+
+    expect(renderRes.status).toBe(422);
+    const errorBody = (await renderRes.json()) as { code: string; message: string };
+    expect(errorBody.code).toBe('import_failed');
+    expect(errorBody.message).toContain('Invalid USDZ file');
+
+    await app.request(`/v1/files/${uploadBody.id}`, { method: 'DELETE' });
   });
 });
