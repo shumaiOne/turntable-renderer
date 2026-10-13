@@ -22,13 +22,12 @@ The easiest way to run `turntable-renderer` is using the prebuilt Docker image f
 docker run -d --rm \
   --name turntable-renderer \
   -p 3003:3000 \
-  -v $(pwd)/data:/app/data \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
   shumaione/turntable-renderer:latest
 ```
 
-> **Note**: Host port `3003` maps to internal container port `3000`. Persistent file storage is stored in `./data`.
+> **Note**: Host port `3003` maps to internal container port `3000`.
 
 #### Verification
 
@@ -61,7 +60,6 @@ docker run -d --rm \
   --shm-size=1gb \
   -p 3003:3000 \
   --device /dev/dri \
-  -v $(pwd)/data:/app/data \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
   shumaione/turntable-renderer:latest
@@ -79,7 +77,6 @@ docker run -d --rm \
   --runtime nvidia \
   --gpus all \
   --device /dev/nvidia-modeset \
-  -v $(pwd)/data:/app/data \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
   shumaione/turntable-renderer:latest
@@ -98,7 +95,6 @@ docker build -t turntable-renderer -f docker/Dockerfile .
 # Run the container
 docker run -d --rm \
   -p 3003:3000 \
-  -v $(pwd)/data:/app/data \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_USERNAME=admin \
   -e TURNTABLE_RENDERER_API_BASIC_AUTH_PASSWORD=your_password \
   turntable-renderer
