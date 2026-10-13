@@ -8,7 +8,7 @@ import mathutils
 # Add current directory to sys.path so we can import helper modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from importers import clear_scene, import_model
-from metadata import extract_metadata
+from metadata import extract_metadata, is_renderable_mesh
 
 
 def hex_to_rgb(hex_str: str):
@@ -24,7 +24,10 @@ def hex_to_rgb(hex_str: str):
 def compute_bounds_and_center():
     min_coord = [float("inf"), float("inf"), float("inf")]
     max_coord = [float("-inf"), float("-inf"), float("-inf")]
-    mesh_objects = [obj for obj in bpy.data.objects if obj.type == "MESH"]
+    mesh_objects = [obj for obj in bpy.data.objects if is_renderable_mesh(obj)]
+
+    if not mesh_objects:
+        mesh_objects = [obj for obj in bpy.data.objects if obj.type == "MESH"]
 
     if not mesh_objects:
         return [0.0, 0.0, 0.0], 1.0
@@ -206,6 +209,14 @@ def setup_camera(radius: float, framing_margin: float, fov_deg: float, elevation
     cam_data = bpy.data.cameras.new("RenderCamera")
     cam_data.lens_unit = "FOV"
     cam_data.angle = math.radians(fov_deg)
+
+    # Dynamic camera clipping planes
+    # Ensure near clipping plane is closer than the nearest point of the bounding sphere
+    if distance > radius:
+        cam_data.clip_start = max(1e-4, min(0.05, (distance - radius) * 0.5))
+    else:
+        cam_data.clip_start = max(1e-4, min(0.05, distance * 0.1))
+    cam_data.clip_end = max(1000.0, (distance + radius) * 2.0)
 
     cam_obj = bpy.data.objects.new("RenderCamera", cam_data)
     elev_rad = math.radians(elevation_deg)

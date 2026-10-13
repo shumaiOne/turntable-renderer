@@ -402,4 +402,60 @@ describe('Render API & Pipeline Integration Tests', () => {
 
     await app.request(`/v1/files/${uploadBody.id}`, { method: 'DELETE' });
   });
+
+  it('correctly handles small scale models without camera near-plane clipping', async () => {
+    if (!blenderAvailable) {
+      return;
+    }
+
+    // A tiny cube (dimensions 0.02 x 0.02 x 0.02)
+    const tinyObj = `# Tiny OBJ
+v -0.01 -0.01 -0.01
+v  0.01 -0.01 -0.01
+v  0.01  0.01 -0.01
+v -0.01  0.01 -0.01
+f 1 2 3 4
+`;
+    const uploadRes = await app.request('/v1/files?filename=tiny.obj', {
+      method: 'POST',
+      body: new TextEncoder().encode(tinyObj),
+    });
+    expect(uploadRes.status).toBe(201);
+    const uploadBody = (await uploadRes.json()) as { id: string };
+
+    const renderRes = await app.request('/v1/render', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: { fileId: uploadBody.id },
+        options: {
+          poster: { width: 128, height: 128 },
+          frames: 1,
+          samples: 1,
+        },
+      }),
+    });
+
+    expect(renderRes.status).toBe(200);
+    const syncBody = (await renderRes.json()) as RenderSyncResponse;
+    expect(syncBody.metadata.dimensions[0]).toBeCloseTo(0.02, 3);
+    expect(syncBody.poster.fileId).toBeDefined();
+
+    // Verify poster is accessible
+    const posterRes = await app.request(`/v1/files/${syncBody.poster.fileId}`);
+    expect(posterRes.status).toBe(200);
+    const posterBytes = await posterRes.arrayBuffer();
+    expect(posterBytes.byteLength).toBeGreaterThan(100);
+
+    // Wait for async task & clean up
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const tRes = await app.request(`/v1/render/tasks/${syncBody.taskId}`);
+      const tBody = (await tRes.json()) as RenderTaskResponse;
+      if (tBody.status === 'completed' || tBody.status === 'failed') break;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    await app.request(`/v1/render/tasks/${syncBody.taskId}`, { method: 'DELETE' });
+    await app.request(`/v1/files/${uploadBody.id}`, { method: 'DELETE' });
+    await app.request(`/v1/files/${syncBody.poster.fileId}`, { method: 'DELETE' });
+  });
 });

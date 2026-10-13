@@ -1,6 +1,24 @@
 import bpy
 import mathutils
 
+def is_renderable_mesh(obj) -> bool:
+    """
+    Checks if a mesh object is intended to be rendered.
+    Excludes hidden objects, non-exported helper collections (e.g. glTF_not_exported bone shapes),
+    and objects hidden from render or excluded from view layer.
+    """
+    if obj.type != "MESH":
+        return False
+    if obj.hide_render:
+        return False
+    if hasattr(obj, "visible_get") and not obj.visible_get():
+        return False
+    if obj.users_collection:
+        if all(col.hide_render or col.name == "glTF_not_exported" for col in obj.users_collection):
+            return False
+    return True
+
+
 def extract_metadata(input_format: str = "unknown") -> dict:
     """
     Extracts scene and geometry metadata from the current Blender scene.
@@ -15,8 +33,11 @@ def extract_metadata(input_format: str = "unknown") -> dict:
     max_coord = [float("-inf"), float("-inf"), float("-inf")]
     has_geometry = False
 
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
+    mesh_objects = [obj for obj in bpy.data.objects if is_renderable_mesh(obj)]
+    if not mesh_objects:
+        mesh_objects = [obj for obj in bpy.data.objects if obj.type == "MESH"]
+
+    for obj in mesh_objects:
             mesh_count += 1
             mesh = obj.data
 

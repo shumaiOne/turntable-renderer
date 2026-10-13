@@ -134,3 +134,19 @@
   2. In `import_model`, if the input file does not end with `.{ext}`, create a temporary symlink (with fallback to copy) having the proper extension (`f"model.{clean_ext}"`) in a temporary directory, and unlink it in a `finally` block after import finishes.
   3. Map `Invalid USDZ file` errors in `render-manager.ts` and `task-manager.ts` to HTTP 422 `import_failed`.
 - **Consequences**: USD (`.usd`, `.usda`, `.usdc`) and USDZ files render cleanly through the HTTP API and background task runner while preserving zero-database file storage conventions (`${DATA_DIR}/f_${id}.bin`).
+
+## ADR 018: Renderable Mesh Bounding Box Filtering & Dynamic Camera Near/Far Clipping
+- **Status**: Accepted
+- **Context**:
+  1. Models with armature rigs exported to glTF (such as character models) frequently include internal bone helper meshes (e.g. `Icosphere`). Blender's glTF importer places these helper objects into a hidden collection named `glTF_not_exported` with `hide_render = True`. Previously, `compute_bounds_and_center()` and `extract_metadata()` inspected all meshes unconditionally (`[obj for obj in bpy.data.objects if obj.type == "MESH"]`), causing invisible helper meshes to artificially inflate the model's bounding radius (e.g. from 0.23m to 1.70m in `blackrat.glb`), resulting in the actual model appearing tiny in the rendered video.
+  2. Sub-decimeter models (such as insects or small mechanical parts modeled to true real-world dimensions, e.g. `mayi.glb` at 2.7cm length, radius ~0.018m) compute camera distances (~0.07m) closer than Blender's default camera near clipping plane (`clip_start = 0.1m`). As a result, the entire model fell in front of the camera's near clipping plane and was completely culled by Blender, rendering an entirely black video.
+- **Decision**:
+  1. In `metadata.py` and `render.py`, introduce a shared `is_renderable_mesh(obj)` predicate that filters out meshes where `hide_render = True`, `visible_get() == False`, or all parent collections are `hide_render = True` / named `glTF_not_exported`. Include a defensive fallback to all scene meshes if zero meshes pass the filter.
+  2. In `render.py`, dynamically compute camera clipping planes in `setup_camera()`:
+     - `clip_start`: Set to `max(1e-4, min(0.05, (distance - radius) * 0.5))` when `distance > radius` (or `distance * 0.1` otherwise).
+     - `clip_end`: Set to `max(1000.0, (distance + radius) * 2.0)`.
+- **Consequences**:
+  - Models with rigging helper meshes are framed strictly by their visible geometry, eliminating tiny-model framing bugs.
+  - Sub-decimeter and millimeter-scale models render with sharp contrast without being clipped by the camera near plane, while preserving depth buffer precision for larger models.
+  - Scene metadata accurately reflects visible geometry dimensions, mesh counts, and polygon counts.
+
