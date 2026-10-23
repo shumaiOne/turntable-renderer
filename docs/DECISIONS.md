@@ -150,3 +150,10 @@
   - Sub-decimeter and millimeter-scale models render with sharp contrast without being clipped by the camera near plane, while preserving depth buffer precision for larger models.
   - Scene metadata accurately reflects visible geometry dimensions, mesh counts, and polygon counts.
 
+## ADR 019: Multi-Registry Release Pipeline (Aliyun ACR & Docker Hub)
+- **Status**: Accepted
+- **Context**: For geographic optimization and resilient container image distribution, deployments in mainland China and regional clouds require pulling container images from Aliyun Container Registry (ACR) (`crpi-000nkafzu6xvpwsc.cn-hongkong.personal.cr.aliyuncs.com/shumai-one/turntable-renderer`) in addition to Docker Hub (`shumaione/turntable-renderer`).
+- **Decision**: Update `.github/workflows/release.yaml` to authenticate against Aliyun ACR using `ALI_ACR_TOKEN` and add the Aliyun repository to `docker/metadata-action`, pushing images simultaneously to both registries on release triggers.
+- **Consequences**: Provides reliable high-speed image pulls for Asian cloud regions matching Shumai's release CI conventions while maintaining backward compatibility with existing Docker Hub distribution.
+
+
