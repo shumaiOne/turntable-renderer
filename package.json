@@ -4,6 +4,7 @@
   "description": "Standalone 3D model turntable rendering HTTP server built with Bun, Hono, and isolated Blender subprocesses",
   "main": "src/turntable-renderer/index.ts",
   "type": "module",
+  "packageManager": "bun@1.4.4",
   "scripts": {
     "start": "bun run src/turntable-renderer/index.ts",
     "dev": "bun --watch src/turntable-renderer/index.ts",

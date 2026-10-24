@@ -1,7 +1,7 @@
 # ==============================================================================
 # Stage 1: Build standalone single-file binary using Bun
 # ==============================================================================
-FROM --platform=linux/amd64 oven/bun:1.4.2 AS builder
+FROM --platform=linux/amd64 oven/bun:1.4.4 AS builder
 
 WORKDIR /build
 

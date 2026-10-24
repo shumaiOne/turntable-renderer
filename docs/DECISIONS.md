@@ -156,4 +156,10 @@
 - **Decision**: Update `.github/workflows/release.yaml` to authenticate against Aliyun ACR using `ALI_ACR_TOKEN` and add the Aliyun repository to `docker/metadata-action`, pushing images simultaneously to both registries on release triggers.
 - **Consequences**: Provides reliable high-speed image pulls for Asian cloud regions matching Shumai's release CI conventions while maintaining backward compatibility with existing Docker Hub distribution.
 
+## ADR 020: Pin Bun Toolchain to 1.4.4
+- **Status**: Accepted
+- **Context**: Local development, CI, and the Docker builder should use a consistent, reproducible Bun version.
+- **Decision**: Pin Bun 1.4.4 in `package.json`, GitHub Actions, and the Docker builder image. Keep `@types/bun` at 1.4.2; resolving 1.4.4 was blocked by the repository's seven-day minimum release age policy at the time of this upgrade.
+- **Consequences**: The runtime/build toolchain is consistent across developer machines, CI, and Docker, while type definitions remain lockfile-reproducible.
+
 

@@ -105,7 +105,7 @@ docker run -d --rm \
 ## Local Development
 
 Requirements:
-- [Bun 1.4+](https://bun.sh)
+- [Bun 1.4.4](https://bun.sh)
 - Blender 5.2 LTS (optional for local testing; Docker is recommended)
 
 ```bash
